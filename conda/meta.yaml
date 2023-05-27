@@ -1,0 +1,45 @@
+package:
+  name: roq-fix-proxy-2
+  version: {{ GIT_DESCRIBE_TAG }}
+
+source:
+  git_url: ..
+
+build:
+  skip: true  # [not unix]
+  number: {{ ROQ_BUILD_NUMBER if ROQ_BUILD_NUMBER is defined else GIT_DESCRIBE_NUMBER }}
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - clang-format
+    - cmake
+    - coreutils                                                                                                                                                    
+    - git
+    - make
+    - roq-autogen
+  host:
+    - catch2
+    - fmt
+    - libabseil
+    - nlohmann_json
+    - roq-api
+    - roq-client
+    - roq-codec
+    - roq-fix
+    - roq-flags
+    - roq-io
+    - roq-logging
+    - roq-oss-benchmark
+    - roq-oss-magic_enum
+    - roq-oss-nameof
+    - roq-oss-tomlplusplus
+    - roq-oss-unordered_dense
+    - roq-utils
+    - roq-web
+
+about:
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Roq FIX Proxy Service

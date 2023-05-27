@@ -1,0 +1,79 @@
+{
+  "name": "roq/fix_proxy/flags/Client",
+  "type": "flags",
+  "prefix": "client_",
+  "values": [
+    {
+      "name": "listen_address",
+      "type": "std/string",
+      "validator": "roq/flags/validators/ListenAddress",
+      "required": true,
+      "description": "Listen address"
+    },
+    {
+      "name": "comp_id",
+      "type": "std/string",
+      "required": true,
+      "description": "Component name"
+    },
+    {
+      "name": "auth_method",
+      "type": "std/string",
+      "description": "Authentication method: (empty), hmac_sha256, hmac_sha256_ts"
+    },
+    {
+      "name": "auth_timestamp_tolerance",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "5s",
+      "description": "Timestamp tolerance used with authentication"
+    },
+    {
+      "name": "request_timeout",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "5s",
+      "description": "Request timeout"
+    },
+    {
+      "name": "logon_heartbeat_min",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "5s",
+      "description": "Minimum accepted client ping frequency"
+    },
+    {
+      "name": "logon_heartbeat_max",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "60s",
+      "description": "Maximum accepted client ping frequency"
+    },
+    {
+      "name": "heartbeat_freq",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "30s",
+      "description": "Heartbeat frequency"
+    },
+    {
+      "name": "decode_buffer_size",
+      "type": "std/uint32",
+      "required": true,
+      "default": 1048576,
+      "description": "Decode buffer size"
+    },
+    {
+      "name": "encode_buffer_size",
+      "type": "std/uint32",
+      "required": true,
+      "default": 16777216,
+      "description": "Encode buffer size"
+    }
+  ]
+}

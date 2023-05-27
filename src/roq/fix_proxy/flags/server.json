@@ -1,0 +1,73 @@
+{
+  "name": "roq/fix_proxy/flags/Server",
+  "type": "flags",
+  "prefix": "server_",
+  "values": [
+    {
+      "name": "target_comp_id",
+      "type": "std/string",
+      "required": true,
+      "description": "Target comp id"
+    },
+    {
+      "name": "sender_comp_id",
+      "type": "std/string",
+      "required": true,
+      "description": "Sender comp id"
+    },
+    {
+      "name": "username",
+      "type": "std/string",
+      "required": true,
+      "description": "Username"
+    },
+    {
+      "name": "password",
+      "type": "std/string",
+      "description": "Password"
+    },
+    {
+      "name": "auth_method",
+      "type": "std/string",
+      "description": "Authentication method: (empty), hmac_sha256, hmac_sha256_ts"
+    },
+    {
+      "name": "decode_buffer_size",
+      "type": "std/uint32",
+      "validator": "roq/flags/validators/PowerOfTwo<uint32_t>",
+      "required": true,
+      "default": 16777216,
+      "description": "Decode buffer size"
+    },
+    {
+      "name": "encode_buffer_size",
+      "type": "std/uint32",
+      "validator": "roq/flags/validators/PowerOfTwo<uint32_t>",
+      "required": true,
+      "default": 1048576,
+      "description": "Encode buffer size"
+    },
+    {
+      "name": "ping_freq",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "30s",
+      "description": "Ping freq (seconds)"
+    },
+    {
+      "name": "request_timeout",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "required": true,
+      "default": "500ms",
+      "description": "Request tiemout"
+    },
+    {
+      "name": "debug",
+      "type": "std/bool",
+      "default": false,
+      "description": "Debug"
+    }
+  ]
+}
