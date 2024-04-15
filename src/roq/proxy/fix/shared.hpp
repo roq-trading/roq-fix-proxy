@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "roq/utils/container.hpp"
@@ -31,19 +32,24 @@ struct Shared final {
 
   std::string encode_buffer;
 
-  void add_user(std::string_view const &username, std::string_view const &password, uint32_t strategy_id);
+  void add_user(
+      std::string_view const &username,
+      std::string_view const &password,
+      uint32_t strategy_id,
+      std::string_view const &component);
   void remove_user(std::string_view const &username);
 
   template <typename Success, typename Failure>
   void session_logon(
       uint64_t session_id,
+      std::string_view const &component,
       std::string_view const &username,
       std::string_view const &password,
       std::string_view const &raw_data,
       Success success,
       Failure failure) {
     uint32_t strategy_id = {};
-    auto result = session_logon_helper(session_id, username, password, raw_data, strategy_id);
+    auto result = session_logon_helper(session_id, component, username, password, raw_data, strategy_id);
     if (std::empty(result))
       success(strategy_id);
     else
@@ -84,6 +90,7 @@ struct Shared final {
  protected:
   std::string_view session_logon_helper(
       uint64_t session_id,
+      std::string_view const &component,
       std::string_view const &username,
       std::string_view const &password,
       std::string_view const &raw_data,
@@ -92,7 +99,8 @@ struct Shared final {
   void session_remove_helper(uint64_t session_id);
   void session_cleanup_helper(uint64_t session_id);
 
-  utils::unordered_map<std::string, std::pair<std::string, uint32_t>> username_to_password_and_strategy_id_;
+  utils::unordered_map<std::string, std::tuple<std::string, uint32_t, std::string>>
+      username_to_password_and_strategy_id_and_component_id_;
   utils::unordered_map<std::string, uint64_t> username_to_session_;
   utils::unordered_map<uint64_t, std::string> session_to_username_;
   utils::unordered_set<uint64_t> sessions_to_remove_;

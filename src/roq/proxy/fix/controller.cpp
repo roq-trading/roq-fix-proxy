@@ -160,7 +160,7 @@ void Controller::operator()(io::sys::Timer::Event const &event) {
 // auth::Session::Handler
 
 void Controller::operator()(auth::Session::Insert const &insert) {
-  shared_.add_user(insert.username, insert.password, insert.strategy_id);
+  shared_.add_user(insert.username, insert.password, insert.strategy_id, insert.component);
 }
 
 void Controller::operator()(auth::Session::Remove const &remove) {

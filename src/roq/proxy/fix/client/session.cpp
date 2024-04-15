@@ -669,7 +669,8 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
         log::error("Invalid logon (reason: {})"sv, reason);
         send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, reason);
       };
-      shared_.session_logon(session_id_, logon.username, logon.password, logon.raw_data, success, failure);
+      shared_.session_logon(
+          session_id_, header.sender_comp_id, logon.username, logon.password, logon.raw_data, success, failure);
       break;
     }
     case WAITING_CREATE_ROUTE:

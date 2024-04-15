@@ -15,6 +15,7 @@ struct Error final {
   static std::string_view const ALREADY_LOGGED_ON;
   static std::string_view const INVALID_PASSWORD;
   static std::string_view const INVALID_USERNAME;
+  static std::string_view const INVALID_COMPONENT;
 };
 
 }  // namespace fix

@@ -16,6 +16,7 @@ std::string_view const Error::NOT_LOGGED_ON = "NOT_LOGGED_ON"sv;
 std::string_view const Error::ALREADY_LOGGED_ON = "ALREADY_LOGGED_ON"sv;
 std::string_view const Error::INVALID_PASSWORD = "INVALID_PASSWORD"sv;
 std::string_view const Error::INVALID_USERNAME = "INVALID_USERNAME"sv;
+std::string_view const Error::INVALID_COMPONENT = "INVALID_COMPONENT"sv;
 
 }  // namespace fix
 }  // namespace proxy
