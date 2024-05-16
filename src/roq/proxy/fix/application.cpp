@@ -2,6 +2,7 @@
 
 #include "roq/proxy/fix/application.hpp"
 
+#include <exception>
 #include <vector>
 
 #include "roq/exceptions.hpp"

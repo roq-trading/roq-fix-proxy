@@ -4,6 +4,8 @@
 
 #include <nameof.hpp>
 
+#include <exception>
+
 #include "roq/logging.hpp"
 
 #include "roq/exceptions.hpp"
