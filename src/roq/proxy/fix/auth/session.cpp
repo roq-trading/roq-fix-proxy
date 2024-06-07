@@ -97,13 +97,7 @@ void Session::operator()(web::socket::Client::Text const &text) {
     if (action == "insert"sv) {
       auto password = obj.at("password"sv).template get<std::string_view>();
       auto strategy_id = obj.at("strategy_id"sv).template get<uint32_t>();
-      log::info<1>(
-          R"(action="{}", component="{}", username="{}", password="{}", strategy_id={})"sv,
-          action,
-          component,
-          username,
-          password,
-          strategy_id);
+      log::info<1>(R"(action="{}", component="{}", username="{}", password="{}", strategy_id={})"sv, action, component, username, password, strategy_id);
       auto insert = Insert{
           .component = component,
           .username = username,

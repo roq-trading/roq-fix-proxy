@@ -101,8 +101,7 @@ auto is_order_complete(auto ord_status) {
 }
 
 auto is_pending(auto exec_type) {
-  if (exec_type == roq::fix::ExecType::PENDING_NEW || exec_type == roq::fix::ExecType::PENDING_REPLACE ||
-      exec_type == roq::fix::ExecType::PENDING_CANCEL)
+  if (exec_type == roq::fix::ExecType::PENDING_NEW || exec_type == roq::fix::ExecType::PENDING_REPLACE || exec_type == roq::fix::ExecType::PENDING_CANCEL)
     return true;
   return false;
 }
@@ -117,17 +116,11 @@ auto get_subscription_request_type(auto &event) {
 
 // === IMPLEMENTATION ===
 
-Controller::Controller(
-    Settings const &settings,
-    Config const &config,
-    io::Context &context,
-    std::span<std::string_view const> const &connections)
+Controller::Controller(Settings const &settings, Config const &config, io::Context &context, std::span<std::string_view const> const &connections)
     : context_{context}, terminate_{context.create_signal(*this, io::sys::Signal::Type::TERMINATE)},
-      interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)},
-      timer_{context.create_timer(*this, TIMER_FREQUENCY)}, shared_{settings, config},
-      auth_session_{create_auth_session(*this, settings, context)},
-      server_session_{create_server_session(*this, settings, context, connections)},
-      client_manager_{*this, settings, context, shared_} {
+      interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)}, timer_{context.create_timer(*this, TIMER_FREQUENCY)},
+      shared_{settings, config}, auth_session_{create_auth_session(*this, settings, context)},
+      server_session_{create_server_session(*this, settings, context, connections)}, client_manager_{*this, settings, context, shared_} {
 }
 
 void Controller::run() {
@@ -670,8 +663,7 @@ void Controller::operator()(Trace<codec::fix::ExecutionReport> const &event) {
 void Controller::operator()(Trace<codec::fix::RequestForPositionsAck> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
-    auto failure = event.value.pos_req_result != roq::fix::PosReqResult::VALID ||
-                   event.value.pos_req_status == roq::fix::PosReqStatus::REJECTED;
+    auto failure = event.value.pos_req_result != roq::fix::PosReqResult::VALID || event.value.pos_req_status == roq::fix::PosReqStatus::REJECTED;
     if (failure) {
       remove = true;
       total_num_pos_reports_ = {};
@@ -849,8 +841,7 @@ void Controller::operator()(Trace<codec::fix::UserRequest> const &event, uint64_
   auto &tmp = subscriptions_.user.client_to_server[session_id];
   if (std::empty(tmp)) {
     tmp = user_request.user_request_id;
-    [[maybe_unused]] auto res =
-        subscriptions_.user.server_to_client.try_emplace(user_request.user_request_id, session_id);
+    [[maybe_unused]] auto res = subscriptions_.user.server_to_client.try_emplace(user_request.user_request_id, session_id);
     assert(res.second);
     dispatch_to_server(event);
   } else {
@@ -1294,12 +1285,7 @@ void Controller::operator()(Trace<codec::fix::NewOrderSingle> const &event, uint
 void Controller::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &event, uint64_t session_id) {
   auto &order_cancel_replace_request = event.value;
   auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
-    log::warn(
-        R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv,
-        order_id,
-        ord_status,
-        cxl_rej_reason,
-        text);
+    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
     auto order_cancel_reject = codec::fix::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
@@ -1347,12 +1333,7 @@ void Controller::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &
 void Controller::operator()(Trace<codec::fix::OrderCancelRequest> const &event, uint64_t session_id) {
   auto &order_cancel_request = event.value;
   auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
-    log::warn(
-        R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv,
-        order_id,
-        ord_status,
-        cxl_rej_reason,
-        text);
+    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
     auto order_cancel_reject = codec::fix::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
@@ -1715,12 +1696,7 @@ bool Controller::find_req_id(auto &mapping, std::string_view const &req_id, Call
   return true;
 }
 
-void Controller::add_req_id(
-    auto &mapping,
-    std::string_view const &req_id,
-    std::string_view const &request_id,
-    uint64_t session_id,
-    bool keep_alive) {
+void Controller::add_req_id(auto &mapping, std::string_view const &req_id, std::string_view const &request_id, uint64_t session_id, bool keep_alive) {
   auto &client_to_server = mapping.client_to_server[session_id];
   client_to_server.emplace(req_id, request_id);
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, keep_alive);

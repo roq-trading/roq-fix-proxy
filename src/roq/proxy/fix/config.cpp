@@ -129,8 +129,7 @@ Config Config::parse_text(std::string_view const &text) {
   return Config{root};
 }
 
-Config::Config(auto &node)
-    : symbols{parse_symbols<decltype(symbols)>(node)}, users{parse_users<decltype(users)>(node)} {
+Config::Config(auto &node) : symbols{parse_symbols<decltype(symbols)>(node)}, users{parse_users<decltype(users)>(node)} {
   check_empty(node);
 }
 

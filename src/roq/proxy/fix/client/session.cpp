@@ -64,9 +64,8 @@ auto validate_req_id(auto &req_id) {
 // === IMPLEMENTATION ===
 
 Session::Session(Handler &handler, uint64_t session_id, io::net::tcp::Connection::Factory &factory, Shared &shared)
-    : handler_{handler}, session_id_{session_id}, connection_{factory.create(*this)}, shared_{shared},
-      logon_timeout_{create_logon_timeout(shared_.settings)}, decode_buffer_(shared.settings.client.decode_buffer_size),
-      encode_buffer_(shared.settings.client.encode_buffer_size) {
+    : handler_{handler}, session_id_{session_id}, connection_{factory.create(*this)}, shared_{shared}, logon_timeout_{create_logon_timeout(shared_.settings)},
+      decode_buffer_(shared.settings.client.decode_buffer_size), encode_buffer_(shared.settings.client.encode_buffer_size) {
 }
 
 void Session::operator()(Event<Stop> const &) {
@@ -614,10 +613,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
       comp_id_ = header.sender_comp_id;
       // validate: target_comp_id
       if (header.target_comp_id != shared_.settings.client.comp_id) {
-        log::error(
-            R"(Unexpected target_comp_id="{}" (expected: "{}"))"sv,
-            header.target_comp_id,
-            shared_.settings.client.comp_id);
+        log::error(R"(Unexpected target_comp_id="{}" (expected: "{}"))"sv, header.target_comp_id, shared_.settings.client.comp_id);
         send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_UNKNOWN_TARGET_COMP_ID);
         return;  // note!
       }
@@ -629,8 +625,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
       }
       // validate: heart_bt_int
       std::chrono::seconds heart_bt_int{logon.heart_bt_int};
-      if (heart_bt_int < shared_.settings.client.logon_heartbeat_min ||
-          heart_bt_int > shared_.settings.client.logon_heartbeat_max) {
+      if (heart_bt_int < shared_.settings.client.logon_heartbeat_min || heart_bt_int > shared_.settings.client.logon_heartbeat_max) {
         log::error(
             R"(Unexpected heart_bt_int={} (expected range: [{};{}]"))"sv,
             heart_bt_int,
@@ -671,8 +666,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
         log::error("Invalid logon (reason: {})"sv, reason);
         send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, reason);
       };
-      shared_.session_logon(
-          session_id_, header.sender_comp_id, logon.username, logon.password, logon.raw_data, success, failure);
+      shared_.session_logon(session_id_, header.sender_comp_id, logon.username, logon.password, logon.raw_data, success, failure);
       break;
     }
     case WAITING_CREATE_ROUTE:
@@ -740,8 +734,7 @@ void Session::operator()(Trace<codec::fix::SecurityListRequest> const &event, ro
     case READY: {
       auto &security_list_request = event.value;
       if (!validate_req_id(security_list_request.security_req_id)) {
-        send_business_message_reject(
-            header, security_list_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, security_list_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -765,11 +758,7 @@ void Session::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &eve
     case READY: {
       auto &security_definition_request = event.value;
       if (!validate_req_id(security_definition_request.security_req_id)) {
-        send_business_message_reject(
-            header,
-            security_definition_request.security_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, security_definition_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -793,11 +782,7 @@ void Session::operator()(Trace<codec::fix::SecurityStatusRequest> const &event, 
     case READY: {
       auto &security_status_request = event.value;
       if (!validate_req_id(security_status_request.security_status_req_id)) {
-        send_business_message_reject(
-            header,
-            security_status_request.security_status_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, security_status_request.security_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -821,8 +806,7 @@ void Session::operator()(Trace<codec::fix::MarketDataRequest> const &event, roq:
     case READY: {
       auto &market_data_request = event.value;
       if (!validate_req_id(market_data_request.md_req_id)) {
-        send_business_message_reject(
-            header, market_data_request.md_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_MD_REQ_ID);
+        send_business_message_reject(header, market_data_request.md_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_MD_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -846,18 +830,13 @@ void Session::operator()(Trace<codec::fix::OrderStatusRequest> const &event, roq
     case READY: {
       auto &order_status_request = event.value;
       if (!validate_req_id(order_status_request.ord_status_req_id)) {
-        send_business_message_reject(
-            header,
-            order_status_request.ord_status_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, order_status_request.ord_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_status_request] = event;
-        send_business_message_reject(
-            header, order_status_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, order_status_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -879,20 +858,12 @@ void Session::operator()(Trace<codec::fix::OrderMassStatusRequest> const &event,
     case READY: {
       auto &order_mass_status_request = event.value;
       if (!validate_req_id(order_mass_status_request.mass_status_req_id)) {
-        send_business_message_reject(
-            header,
-            order_mass_status_request.mass_status_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(
-            header,
-            order_mass_status_request.mass_status_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -914,14 +885,12 @@ void Session::operator()(Trace<codec::fix::NewOrderSingle> const &event, roq::fi
     case READY: {
       auto &new_order_single = event.value;
       if (!validate_req_id(new_order_single.cl_ord_id)) {
-        send_business_message_reject(
-            header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(
-            header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -943,24 +912,18 @@ void Session::operator()(Trace<codec::fix::OrderCancelRequest> const &event, roq
     case READY: {
       auto &order_cancel_request = event.value;
       if (!validate_req_id(order_cancel_request.cl_ord_id)) {
-        send_business_message_reject(
-            header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
         return;
       }
       if (!validate_req_id(order_cancel_request.orig_cl_ord_id)) {
-        send_business_message_reject(
-            header,
-            order_cancel_request.orig_cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_ORIG_CL_ORD_ID);
+        send_business_message_reject(header, order_cancel_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_ORIG_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_cancel_request] = event;
         // XXX FIXME should be execution report
-        send_business_message_reject(
-            header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -982,30 +945,18 @@ void Session::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &eve
     case READY: {
       auto &order_cancel_replace_request = event.value;
       if (!validate_req_id(order_cancel_replace_request.cl_ord_id)) {
-        send_business_message_reject(
-            header,
-            order_cancel_replace_request.cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
         return;
       }
       if (!validate_req_id(order_cancel_replace_request.orig_cl_ord_id)) {
-        send_business_message_reject(
-            header,
-            order_cancel_replace_request.orig_cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_ORIG_CL_ORD_ID);
+        send_business_message_reject(header, order_cancel_replace_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_ORIG_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_cancel_replace_request] = event;
         // XXX FIXME should be execution report
-        send_business_message_reject(
-            header,
-            order_cancel_replace_request.cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -1027,20 +978,12 @@ void Session::operator()(Trace<codec::fix::OrderMassCancelRequest> const &event,
     case READY: {
       auto &order_mass_cancel_request = event.value;
       if (!validate_req_id(order_mass_cancel_request.cl_ord_id)) {
-        send_business_message_reject(
-            header,
-            order_mass_cancel_request.cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(
-            header,
-            order_mass_cancel_request.cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_UNSUPPORTED_MSG_TYPE);
+        send_business_message_reject(header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_MSG_TYPE);
       }
       break;
     }
@@ -1062,18 +1005,13 @@ void Session::operator()(Trace<codec::fix::RequestForPositions> const &event, ro
     case READY: {
       auto &request_for_positions = event.value;
       if (!validate_req_id(request_for_positions.pos_req_id)) {
-        send_business_message_reject(
-            header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, request_for_positions] = event;
-        send_business_message_reject(
-            header,
-            request_for_positions.pos_req_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -1095,21 +1033,13 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
     case READY: {
       auto &trade_capture_report_request = event.value;
       if (!validate_req_id(trade_capture_report_request.trade_request_id)) {
-        send_business_message_reject(
-            header,
-            trade_capture_report_request.trade_request_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, trade_capture_report_request.trade_request_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, trade_capture_report_request] = event;
-        send_business_message_reject(
-            header,
-            trade_capture_report_request.cl_ord_id,
-            roq::fix::BusinessRejectReason::OTHER,
-            ERROR_UNSUPPORTED_MSG_TYPE);
+        send_business_message_reject(header, trade_capture_report_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_MSG_TYPE);
       }
       break;
     }
@@ -1123,8 +1053,7 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
 
 // helpers
 
-void Session::send_reject_and_close(
-    roq::fix::Header const &header, roq::fix::SessionRejectReason session_reject_reason, std::string_view const &text) {
+void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::SessionRejectReason session_reject_reason, std::string_view const &text) {
   auto response = codec::fix::Reject{
       .ref_seq_num = header.msg_seq_num,
       .text = text,
@@ -1137,10 +1066,7 @@ void Session::send_reject_and_close(
 }
 
 void Session::send_business_message_reject(
-    roq::fix::Header const &header,
-    std::string_view const &ref_id,
-    roq::fix::BusinessRejectReason business_reject_reason,
-    std::string_view const &text) {
+    roq::fix::Header const &header, std::string_view const &ref_id, roq::fix::BusinessRejectReason business_reject_reason, std::string_view const &text) {
   auto response = codec::fix::BusinessMessageReject{
       .ref_seq_num = header.msg_seq_num,
       .ref_msg_type = header.msg_type,                   // required

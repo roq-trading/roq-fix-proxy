@@ -49,10 +49,8 @@ auto create_next_request_id() {
 Shared::Shared(Settings const &settings, Config const &config)
     : settings{settings},
       username_to_password_and_strategy_id_and_component_id_{
-          create_username_to_password_and_strategy_id_and_component_id<
-              decltype(username_to_password_and_strategy_id_and_component_id_)>(config)},
-      regex_symbols_{create_regex_symbols<decltype(regex_symbols_)>(config)},
-      next_request_id_{create_next_request_id()},
+          create_username_to_password_and_strategy_id_and_component_id<decltype(username_to_password_and_strategy_id_and_component_id_)>(config)},
+      regex_symbols_{create_regex_symbols<decltype(regex_symbols_)>(config)}, next_request_id_{create_next_request_id()},
       crypto_{settings.client.auth_method, settings.client.auth_timestamp_tolerance} {
 }
 
@@ -63,11 +61,7 @@ bool Shared::include(std::string_view const &symbol) const {
   return false;
 }
 
-void Shared::add_user(
-    std::string_view const &username,
-    std::string_view const &password,
-    uint32_t strategy_id,
-    std::string_view const &component) {
+void Shared::add_user(std::string_view const &username, std::string_view const &password, uint32_t strategy_id, std::string_view const &component) {
   auto updated = false;
   auto iter = username_to_password_and_strategy_id_and_component_id_.find(username);
   if (iter == std::end(username_to_password_and_strategy_id_and_component_id_)) {

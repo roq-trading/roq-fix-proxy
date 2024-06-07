@@ -40,8 +40,7 @@ Crypto::Crypto(std::string_view const &method, std::chrono::nanoseconds timestam
   log::info("Using method={}"sv, magic_enum::enum_name(method_));
 }
 
-bool Crypto::validate(
-    std::string_view const &password, std::string_view const &secret, std::string_view const &raw_data) {
+bool Crypto::validate(std::string_view const &password, std::string_view const &secret, std::string_view const &raw_data) {
   switch (method_) {
     using enum Method;
     case UNDEFINED:

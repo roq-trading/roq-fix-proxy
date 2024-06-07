@@ -27,8 +27,7 @@ auto create_listener(auto &handler, auto &settings, auto &context) {
 
 // === IMPLEMENTATION ===
 
-Listener::Listener(Handler &handler, Settings const &settings, io::Context &context)
-    : handler_{handler}, listener_{create_listener(*this, settings, context)} {
+Listener::Listener(Handler &handler, Settings const &settings, io::Context &context) : handler_{handler}, listener_{create_listener(*this, settings, context)} {
 }
 
 // io::net::tcp::Listener::Handler
@@ -51,8 +50,7 @@ void Listener::operator()(io::net::tcp::Connection::Factory &factory) {
 
 void Listener::operator()(io::net::tcp::Connection::Factory &factory, io::NetworkAddress const &network_address) {
   struct Bridge final : public client::Factory {
-    Bridge(io::net::tcp::Connection::Factory &factory, io::NetworkAddress const &network_address)
-        : factory_{factory}, network_address_{network_address} {}
+    Bridge(io::net::tcp::Connection::Factory &factory, io::NetworkAddress const &network_address) : factory_{factory}, network_address_{network_address} {}
 
    protected:
     std::unique_ptr<Session> create(Session::Handler &handler, uint64_t session_id, Shared &shared) override {

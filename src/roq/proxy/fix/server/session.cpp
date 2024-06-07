@@ -57,13 +57,11 @@ auto create_connection_manager(auto &handler, auto &settings, auto &connection_f
 // === IMPLEMENTATION ===
 
 Session::Session(Handler &handler, Settings const &settings, io::Context &context, io::web::URI const &uri)
-    : handler_{handler}, username_{settings.server.username}, password_{settings.server.password},
-      sender_comp_id_{settings.server.sender_comp_id}, target_comp_id_{settings.server.target_comp_id},
-      ping_freq_{settings.server.ping_freq}, debug_{settings.server.debug},
+    : handler_{handler}, username_{settings.server.username}, password_{settings.server.password}, sender_comp_id_{settings.server.sender_comp_id},
+      target_comp_id_{settings.server.target_comp_id}, ping_freq_{settings.server.ping_freq}, debug_{settings.server.debug},
       connection_factory_{create_connection_factory(settings, context, uri)},
-      connection_manager_{create_connection_manager(*this, settings, *connection_factory_)},
-      decode_buffer_(settings.server.decode_buffer_size), decode_buffer_2_(settings.server.decode_buffer_size),
-      encode_buffer_(settings.server.encode_buffer_size) {
+      connection_manager_{create_connection_manager(*this, settings, *connection_factory_)}, decode_buffer_(settings.server.decode_buffer_size),
+      decode_buffer_2_(settings.server.decode_buffer_size), encode_buffer_(settings.server.encode_buffer_size) {
 }
 
 void Session::operator()(Event<Start> const &) {
@@ -299,8 +297,7 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
       break;
     }
     case MARKET_DATA_SNAPSHOT_FULL_REFRESH: {
-      auto market_data_snapshot_full_refresh =
-          codec::fix::MarketDataSnapshotFullRefresh::create(message, decode_buffer_);
+      auto market_data_snapshot_full_refresh = codec::fix::MarketDataSnapshotFullRefresh::create(message, decode_buffer_);
       dispatch(event, market_data_snapshot_full_refresh);
       break;
     }
@@ -523,8 +520,7 @@ void Session::send_helper(T const &value) {
 }
 
 void Session::send_logon() {
-  auto heart_bt_int = static_cast<decltype(codec::fix::Logon::heart_bt_int)>(
-      std::chrono::duration_cast<std::chrono::seconds>(ping_freq_).count());
+  auto heart_bt_int = static_cast<decltype(codec::fix::Logon::heart_bt_int)>(std::chrono::duration_cast<std::chrono::seconds>(ping_freq_).count());
   auto logon = codec::fix::Logon{
       .encrypt_method = roq::fix::EncryptMethod::NONE,
       .heart_bt_int = heart_bt_int,
