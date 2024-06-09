@@ -36,7 +36,6 @@ requirements:
     - roq-oss-nameof
     - roq-oss-tomlplusplus
     - roq-oss-unordered_dense
-    - roq-schema
     - roq-utils
     - roq-web
   run:
