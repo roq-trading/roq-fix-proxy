@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 # cmake
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/scripts/cmake ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/autogen/cmake ${CMAKE_MODULE_PATH})
 
 # config
 
@@ -44,8 +44,6 @@ else()
   set(RT_LIBRARIES)
 endif()
 
-find_program(CLANG_FORMAT clang-format REQUIRED)
-
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include(CTest)
 endif()
@@ -59,6 +57,16 @@ option(BUILD_BENCHMARK "Enable benchmark" ON)
 if(BUILD_BENCHMARK)
   find_package(benchmark REQUIRED)
 endif()
+
+# autogen
+
+find_program(ROQ_AUTOGEN roq-autogen REQUIRED)
+
+set(TEMPLATE_DIR ${CMAKE_SOURCE_DIR}/autogen)
+
+# clang-format
+
+find_program(CLANG_FORMAT clang-format REQUIRED)
 
 # include
 

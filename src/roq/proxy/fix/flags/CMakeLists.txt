@@ -22,31 +22,27 @@ if(BUILD_DOCS)
 
 endif()
 
-roq_autogen(
+roq_autogen_hpp(
   OUTPUT
   AUTOGEN_HEADERS
-  NAMESPACE
-  ${NAMESPACE}
-  OUTPUT_TYPE
-  "flags"
-  FILE_TYPE
-  "hpp"
   SOURCES
-  ${AUTOGEN_SCHEMAS})
+  ${AUTOGEN_SCHEMAS}
+  TEMPLATE_DIR
+  ${TEMPLATE_DIR}
+  TEMPLATE_TYPE
+  "state")
 
 add_custom_target(${TARGET_NAME}-autogen-headers ALL DEPENDS ${AUTOGEN_HEADERS})
 
-roq_autogen(
+roq_autogen_cpp(
   OUTPUT
   AUTOGEN_SOURCES
-  NAMESPACE
-  ${NAMESPACE}
-  OUTPUT_TYPE
-  "flags"
-  FILE_TYPE
-  "cpp"
   SOURCES
-  ${AUTOGEN_SCHEMAS})
+  ${AUTOGEN_SCHEMAS}
+  TEMPLATE_DIR
+  ${TEMPLATE_DIR}
+  TEMPLATE_TYPE
+  "state")
 
 roq_gitignore(
   OUTPUT

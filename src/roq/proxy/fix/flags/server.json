@@ -1,39 +1,39 @@
 {
-  "name": "Server",
+  "name": "roq/proxy/fix/flags/Server",
   "type": "flags",
   "prefix": "server_",
   "values": [
     {
       "name": "target_comp_id",
-      "type": "std::string",
+      "type": "std/string",
       "required": true,
       "description": "Target comp id"
     },
     {
       "name": "sender_comp_id",
-      "type": "std::string",
+      "type": "std/string",
       "required": true,
       "description": "Sender comp id"
     },
     {
       "name": "username",
-      "type": "std::string",
+      "type": "std/string",
       "required": true,
       "description": "Username"
     },
     {
       "name": "password",
-      "type": "std::string",
+      "type": "std/string",
       "description": "Password"
     },
     {
       "name": "auth_method",
-      "type": "std::string",
+      "type": "std/string",
       "description": "Authentication method: (empty), hmac_sha256, hmac_sha256_ts"
     },
     {
       "name": "decode_buffer_size",
-      "type": "uint32_t",
+      "type": "std/uint32",
       "validator": "roq::flags::validators::PowerOfTwo<uint32_t>",
       "required": true,
       "default": 16777216,
@@ -41,7 +41,7 @@
     },
     {
       "name": "encode_buffer_size",
-      "type": "uint32_t",
+      "type": "std/uint32",
       "validator": "roq::flags::validators::PowerOfTwo<uint32_t>",
       "required": true,
       "default": 1048576,
@@ -49,7 +49,7 @@
     },
     {
       "name": "ping_freq",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "required": true,
       "default": "30s",
@@ -57,7 +57,7 @@
     },
     {
       "name": "request_timeout",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "required": true,
       "default": "500ms",
@@ -65,7 +65,7 @@
     },
     {
       "name": "debug",
-      "type": "bool",
+      "type": "std/bool",
       "default": false,
       "description": "Debug"
     }
