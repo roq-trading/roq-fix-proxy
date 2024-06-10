@@ -5,7 +5,7 @@
     {
       "name": "config_file",
       "type": "std/string",
-      "validator": "roq::flags::validators::Path",
+      "validator": "roq/flags/validators/Path",
       "required": true,
       "description": "Config file"
     },

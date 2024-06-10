@@ -6,7 +6,7 @@
     {
       "name": "listen_address",
       "type": "std/string",
-      "validator": "roq::flags::validators::ListenAddress",
+      "validator": "roq/flags/validators/ListenAddress",
       "required": true,
       "description": "Listen address"
     },
@@ -24,7 +24,7 @@
     {
       "name": "auth_timestamp_tolerance",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "required": true,
       "default": "5s",
       "description": "Timestamp tolerance used with authentication"
@@ -32,7 +32,7 @@
     {
       "name": "logon_timeout",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "required": true,
       "default": "5s",
       "description": "Logon timeout"
@@ -40,7 +40,7 @@
     {
       "name": "logon_heartbeat_min",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "required": true,
       "default": "5s",
       "description": "Minimum accepted client ping frequency"
@@ -48,7 +48,7 @@
     {
       "name": "logon_heartbeat_max",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "required": true,
       "default": "60s",
       "description": "Maximum accepted client ping frequency"
@@ -56,7 +56,7 @@
     {
       "name": "heartbeat_freq",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "required": true,
       "default": "30s",
       "description": "Heartbeat frequency"
