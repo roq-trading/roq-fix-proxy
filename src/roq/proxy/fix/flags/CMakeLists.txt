@@ -8,15 +8,17 @@ set(AUTOGEN_SCHEMAS auth.json server.json client.json flags.json)
 
 if(BUILD_DOCS)
 
-  roq_autodoc(
+  roq_autogen_rst(
     OUTPUT
     AUTOGEN_DOCS
+    SOURCES
+    ${AUTOGEN_SCHEMAS}
     NAMESPACE
     ${NAMESPACE}
-    OUTPUT_TYPE
-    "doc"
-    SOURCES
-    ${AUTOGEN_SCHEMAS})
+    TEMPLATE_DIR
+    ${TEMPLATE_DIR}
+    TEMPLATE_TYPE
+    "doc")
 
   add_custom_target(flags-autogen-docs ALL DEPENDS ${AUTOGEN_DOCS})
 
