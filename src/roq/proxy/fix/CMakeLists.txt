@@ -1,11 +1,3 @@
-if(BUILD_TESTING)
-  add_subdirectory(test)
-endif()
-
-if(BUILD_BENCHMARK)
-  add_subdirectory(benchmark)
-endif()
-
 set(TARGET_NAME ${PROJECT_NAME})
 
 add_subdirectory(flags)

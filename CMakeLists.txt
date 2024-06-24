@@ -77,7 +77,15 @@ include_directories(
 
 # sub-projects
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/roq)
+add_subdirectory(${CMAKE_SOURCE_DIR}/src)
+
+if(BUILD_TESTING)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/test)
+endif()
+
+if(BUILD_BENCHMARK)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/benchmark)
+endif()
 
 # install
 
