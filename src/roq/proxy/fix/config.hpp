@@ -25,7 +25,6 @@ struct User final {
 };
 
 struct Config final {
-  Config(Config &&) = default;
   Config(Config const &) = delete;
 
   static Config parse_file(std::string_view const &);

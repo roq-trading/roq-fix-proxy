@@ -22,7 +22,6 @@ namespace fix {
 struct Shared final {
   Shared(Settings const &, Config const &);
 
-  Shared(Shared &&) = default;
   Shared(Shared const &) = delete;
 
   uint64_t next_session_id = {};

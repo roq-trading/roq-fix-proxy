@@ -35,7 +35,6 @@ struct Controller final : public io::sys::Signal::Handler,
                           public client::Session::Handler {
   Controller(Settings const &, Config const &, io::Context &, std::span<std::string_view const> const &connections);
 
-  Controller(Controller &&) = default;
   Controller(Controller const &) = delete;
 
   void run();
