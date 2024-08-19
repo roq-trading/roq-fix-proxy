@@ -29,7 +29,7 @@ int Application::main(args::Parser const &args) {
   log::info("settings={}"sv, settings);
   auto config = Config::parse_file(settings.config_file);
   log::info("config={}"sv, config);
-  auto context = io::engine::ContextFactory::create_libevent();
+  auto context = io::engine::ContextFactory::create();
   try {
     Controller{settings, config, *context, params}.run();
     return EXIT_SUCCESS;
