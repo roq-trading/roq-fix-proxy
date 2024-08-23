@@ -128,6 +128,7 @@ struct Session final : public io::net::ConnectionManager::Handler {
   void operator()(io::net::ConnectionManager::Connected const &) override;
   void operator()(io::net::ConnectionManager::Disconnected const &) override;
   void operator()(io::net::ConnectionManager::Read const &) override;
+  void operator()(io::net::ConnectionManager::Write const &) override;
 
   // inbound
 
@@ -220,7 +221,6 @@ struct Session final : public io::net::ConnectionManager::Handler {
   } outbound_;
   std::vector<std::byte> decode_buffer_;
   std::vector<std::byte> decode_buffer_2_;
-  std::vector<std::byte> encode_buffer_;
   // state
   enum class State {
     DISCONNECTED,

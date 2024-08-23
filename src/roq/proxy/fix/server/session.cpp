@@ -49,8 +49,6 @@ auto create_connection_manager(auto &handler, auto &settings, auto &connection_f
       .connection_timeout = settings.net.connection_timeout,
       .disconnect_on_idle_timeout = {},
       .always_reconnect = true,
-      .encode_buffer_size = ROQ_PAGE_SIZE,
-      .max_buffers = {},
   };
   return io::net::ConnectionManager::create(handler, connection_factory, config);
 }
@@ -63,7 +61,7 @@ Session::Session(Handler &handler, Settings const &settings, io::Context &contex
       target_comp_id_{settings.server.target_comp_id}, ping_freq_{settings.server.ping_freq}, debug_{settings.server.debug},
       connection_factory_{create_connection_factory(settings, context, uri)},
       connection_manager_{create_connection_manager(*this, settings, *connection_factory_)}, decode_buffer_(settings.server.decode_buffer_size),
-      decode_buffer_2_(settings.server.decode_buffer_size), encode_buffer_(settings.server.encode_buffer_size) {
+      decode_buffer_2_(settings.server.decode_buffer_size) {
 }
 
 void Session::operator()(Event<Start> const &) {
@@ -201,6 +199,9 @@ void Session::operator()(io::net::ConnectionManager::Read const &) {
     buffer = buffer.subspan(bytes);
   }
   (*connection_manager_).drain(total_bytes);
+}
+
+void Session::operator()(io::net::ConnectionManager::Write const &) {
 }
 
 // inbound
@@ -515,10 +516,12 @@ void Session::send_helper(T const &value) {
       .msg_seq_num = ++outbound_.msg_seq_num,  // note!
       .sending_time = sending_time,
   };
-  auto message = value.encode(header, encode_buffer_);
-  if (debug_) [[unlikely]]
-    log::info("{}"sv, utils::debug::fix::Message{message});
-  (*connection_manager_).send(message);
+  (*connection_manager_).send_with_completion([&](auto &buffer) {
+    auto message = value.encode(header, buffer);
+    if (debug_) [[unlikely]]
+      log::info("{}"sv, utils::debug::fix::Message{message});
+    return std::size(message);
+  });
 }
 
 void Session::send_logon() {

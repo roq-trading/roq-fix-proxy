@@ -65,7 +65,7 @@ auto validate_req_id(auto &req_id) {
 
 Session::Session(Handler &handler, uint64_t session_id, io::net::tcp::Connection::Factory &factory, Shared &shared)
     : handler_{handler}, session_id_{session_id}, connection_{factory.create(*this)}, shared_{shared}, logon_timeout_{create_logon_timeout(shared_.settings)},
-      decode_buffer_(shared.settings.client.decode_buffer_size), encode_buffer_(shared.settings.client.encode_buffer_size) {
+      decode_buffer_(shared.settings.client.decode_buffer_size) {
 }
 
 void Session::operator()(Event<Stop> const &) {
@@ -415,8 +415,10 @@ void Session::send(T const &event, std::chrono::nanoseconds sending_time) {
       .msg_seq_num = ++outbound_.msg_seq_num,  // note!
       .sending_time = sending_time,
   };
-  auto message = event.encode(header, encode_buffer_);
-  (*connection_).send(message);
+  (*connection_).send_with_completion([&](auto &buffer) {
+    auto message = event.encode(header, buffer);
+    return std::size(message);
+  });
 }
 
 void Session::check(roq::fix::Header const &header) {

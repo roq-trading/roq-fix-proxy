@@ -209,7 +209,6 @@ struct Session final : public io::net::tcp::Connection::Handler {
   bool waiting_for_heartbeat_ = {};
   // buffer
   std::vector<std::byte> decode_buffer_;
-  std::vector<std::byte> encode_buffer_;
 };
 
 }  // namespace client
