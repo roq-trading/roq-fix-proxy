@@ -516,7 +516,7 @@ void Session::send_helper(T const &value) {
       .msg_seq_num = ++outbound_.msg_seq_num,  // note!
       .sending_time = sending_time,
   };
-  (*connection_manager_).send_with_completion([&](auto &buffer) {
+  (*connection_manager_).send([&](auto &buffer) {
     auto message = value.encode(header, buffer);
     if (debug_) [[unlikely]]
       log::info("{}"sv, utils::debug::fix::Message{message});

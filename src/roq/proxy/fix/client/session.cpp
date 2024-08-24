@@ -415,7 +415,7 @@ void Session::send(T const &event, std::chrono::nanoseconds sending_time) {
       .msg_seq_num = ++outbound_.msg_seq_num,  // note!
       .sending_time = sending_time,
   };
-  (*connection_).send_with_completion([&](auto &buffer) {
+  (*connection_).send([&](auto &buffer) {
     auto message = event.encode(header, buffer);
     return std::size(message);
   });
