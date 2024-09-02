@@ -8,7 +8,7 @@
 
 #include "roq/logging.hpp"
 
-#include "roq/utils/charconv.hpp"
+#include "roq/utils/charconv/from_chars.hpp"
 
 #include "roq/utils/codec/base64.hpp"
 
@@ -62,7 +62,7 @@ bool Crypto::validate(std::string_view const &password, std::string_view const &
         log::warn(R"(DEBUG no period in raw_data="{}")"sv, raw_data);
         return false;
       }
-      auto tmp = utils::from_chars<int64_t>(raw_data.substr(0, pos));
+      auto tmp = utils::charconv::from_chars<int64_t>(raw_data.substr(0, pos));
       std::chrono::milliseconds sending_time_utc{tmp};
       auto now = clock::get_realtime();
       auto diff = sending_time_utc < now ? (now - sending_time_utc) : (sending_time_utc - now);
