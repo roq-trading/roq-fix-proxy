@@ -23,7 +23,6 @@ requirements:
     - make
     - roq-autogen
   host:
-    - benchmark
     - catch2
     - fmt
     - libabseil
@@ -35,6 +34,7 @@ requirements:
     - roq-flags
     - roq-io
     - roq-logging
+    - roq-oss-benchmark
     - roq-oss-magic_enum
     - roq-oss-nameof
     - roq-oss-tomlplusplus
