@@ -14,8 +14,6 @@ build:
     - CFLAGS=-O3
     - CPPFLAGS=-O3  # [linux]
     - CPPFLAGS=-O3 -D_LIBCPP_DISABLE_AVAILABILITY  # [osx]
-  run_exports:                                                                                                          
-    - {{ pin_subpackage('roq-fix-proxy', max_pin='x.x.x') }}
 
 requirements:
   build:
@@ -27,19 +25,22 @@ requirements:
   host:
     - benchmark
     - catch2
+    - fmt
     - libabseil
     - nlohmann_json
+    - roq-api
     - roq-client
     - roq-codec
+    - roq-fix
     - roq-flags
     - roq-io
+    - roq-logging
+    - roq-oss-magic_enum
     - roq-oss-nameof
     - roq-oss-tomlplusplus
     - roq-oss-unordered_dense
     - roq-utils
     - roq-web
-  run:
-    - benchmark
 
 about:
   license: BSD-3-Clause
