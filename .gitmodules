@@ -6,3 +6,7 @@
 	path = autogen
 	url = http://localhost:8080/gogs/roq-trading/roq-autogen-2.git
 	ignore = dirty
+[submodule "roq-scripts"]
+	path = scripts
+	url = http://localhost:8080/gogs/roq-trading/roq-scripts.git
+	ignore = dirty
