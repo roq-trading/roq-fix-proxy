@@ -25,18 +25,18 @@ target_link_libraries(
           ${TARGET_NAME}-server
           ${TARGET_NAME}-client
           ${TARGET_NAME}-tools
+          roq-api::roq-api
           roq-codec::roq-codec
           roq-fix::roq-fix
-          roq-web::roq-web
+          roq-flags::roq-flags
           roq-io::roq-io
-          roq-utils::roq-utils
           roq-logging::roq-logging
           roq-logging::roq-logging-flags
-          roq-flags::roq-flags
-          roq-api::roq-api
+          roq-utils::roq-utils
+          roq-web::roq-web
+          fmt::fmt
           tomlplusplus::tomlplusplus
-          unordered_dense::unordered_dense
-          fmt::fmt)
+          unordered_dense::unordered_dense)
 
 if(ROQ_BUILD_TYPE STREQUAL "Release")
   set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)

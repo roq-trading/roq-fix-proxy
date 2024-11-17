@@ -10,4 +10,4 @@ target_compile_definitions(
   ${TARGET_NAME} PRIVATE ROQ_PACKAGE_NAME="${TARGET_NAME}" ROQ_HOST="${ROQ_HOST}" ROQ_BUILD_VERSION="${GIT_REPO_VERSION}"
                          ROQ_GIT_DESCRIBE_HASH="${GIT_DESCRIBE_HASH}" ROQ_BUILD_NUMBER="${ROQ_BUILD_NUMBER}" ROQ_BUILD_TYPE="${ROQ_BUILD_TYPE}")
 
-target_link_libraries(${TARGET_NAME} roq-api::roq-api fmt::fmt)
+target_link_libraries(${TARGET_NAME} PRIVATE roq-api::roq-api fmt::fmt)

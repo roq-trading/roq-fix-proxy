@@ -4,4 +4,4 @@ set(SOURCES crypto.cpp)
 
 add_library(${TARGET_NAME} OBJECT ${SOURCES})
 
-target_link_libraries(${TARGET_NAME} roq-utils::roq-utils fmt::fmt)
+target_link_libraries(${TARGET_NAME} PRIVATE roq-logging::roq-logging roq-utils::roq-utils fmt::fmt)
