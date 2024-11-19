@@ -7,6 +7,7 @@
 
 #include "roq/exceptions.hpp"
 
+#include "roq/utils/common.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/fix/utils.hpp"
