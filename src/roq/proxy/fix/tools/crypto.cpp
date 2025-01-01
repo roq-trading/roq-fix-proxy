@@ -3,6 +3,9 @@
 #include "roq/proxy/fix/tools/crypto.hpp"
 
 #include <fmt/chrono.h>
+#include <fmt/core.h>
+
+#include <magic_enum/magic_enum_format.hpp>
 
 #include "roq/clock.hpp"
 
@@ -37,7 +40,7 @@ auto parse_method(auto &auth_method) {
 
 Crypto::Crypto(std::string_view const &method, std::chrono::nanoseconds timestamp_tolerance)
     : method_{parse_method(method)}, timestamp_tolerance_{timestamp_tolerance} {
-  log::info("Using method={}"sv, magic_enum::enum_name(method_));
+  log::info("Using method={}"sv, method_);
 }
 
 bool Crypto::validate(std::string_view const &password, std::string_view const &secret, std::string_view const &raw_data) {

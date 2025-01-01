@@ -2,6 +2,10 @@
 
 #include "roq/proxy/fix/server/session.hpp"
 
+#include <fmt/core.h>
+
+#include <magic_enum/magic_enum_format.hpp>
+
 #include <nameof.hpp>
 
 #include "roq/logging.hpp"
@@ -145,7 +149,7 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
 
 void Session::operator()(Session::State state) {
   if (utils::update(state_, state))
-    log::debug("state={}"sv, magic_enum::enum_name(state));
+    log::debug("state={}"sv, state);
 }
 
 // io::net::ConnectionManager::Handler

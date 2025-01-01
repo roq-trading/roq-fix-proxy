@@ -2,6 +2,10 @@
 
 #include "roq/proxy/fix/controller.hpp"
 
+#include <fmt/core.h>
+
+#include <magic_enum/magic_enum_format.hpp>
+
 #include "roq/event.hpp"
 #include "roq/timer.hpp"
 
@@ -138,7 +142,7 @@ void Controller::run() {
 // io::sys::Signal::Handler
 
 void Controller::operator()(io::sys::Signal::Event const &event) {
-  log::warn("*** SIGNAL: {} ***"sv, magic_enum::enum_name(event.type));
+  log::warn("*** SIGNAL: {} ***"sv, event.type);
   context_.stop();
 }
 
