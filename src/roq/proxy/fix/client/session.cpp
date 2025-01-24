@@ -69,7 +69,7 @@ auto validate_req_id(auto &req_id) {
 
 Session::Session(Handler &handler, uint64_t session_id, io::net::tcp::Connection::Factory &factory, Shared &shared)
     : handler_{handler}, session_id_{session_id}, connection_{factory.create(*this)}, shared_{shared}, logon_timeout_{create_logon_timeout(shared_.settings)},
-      decode_buffer_(shared.settings.client.decode_buffer_size) {
+      decode_buffer_(shared.settings.client.decode_buffer_size), decode_buffer_2_(shared.settings.client.decode_buffer_size) {
 }
 
 void Session::operator()(Event<Stop> const &) {
@@ -273,6 +273,18 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReport> const &event) {
   auto &[trace_info, trade_capture_report] = event;
   if (ready())
     send<2>(trade_capture_report);
+}
+
+void Session::operator()(Trace<codec::fix::MassQuoteAck> const &event) {
+  auto &[trace_info, mass_quote_ack] = event;
+  if (ready())
+    send<2>(mass_quote_ack);
+}
+
+void Session::operator()(Trace<codec::fix::QuoteStatusReport> const &event) {
+  auto &[trace_info, quote_status_report] = event;
+  if (ready())
+    send<2>(quote_status_report);
 }
 
 void Session::operator()(State state) {
@@ -519,6 +531,13 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
       // - trade capture
     case TRADE_CAPTURE_REPORT_REQUEST:
       dispatch<codec::fix::TradeCaptureReportRequest>(event, decode_buffer_);
+      break;
+      // - quotes
+    case MASS_QUOTE:
+      dispatch<codec::fix::MassQuote>(event, decode_buffer_, decode_buffer_2_);
+      break;
+    case QUOTE_CANCEL:
+      dispatch<codec::fix::QuoteCancel>(event, decode_buffer_);
       break;
     default:
       log::warn("Unexpected: msg_type={}"sv, message.header.msg_type);
@@ -1058,6 +1077,14 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
     case ZOMBIE:
       break;
   }
+}
+
+void Session::operator()(Trace<codec::fix::MassQuote> const &, roq::fix::Header const &) {
+  log::fatal("NOT IMPLEMENTED"sv);
+}
+
+void Session::operator()(Trace<codec::fix::QuoteCancel> const &, roq::fix::Header const &) {
+  log::fatal("NOT IMPLEMENTED"sv);
 }
 
 // helpers

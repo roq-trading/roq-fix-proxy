@@ -237,6 +237,7 @@ void Controller::operator()(Trace<codec::fix::BusinessMessageReject> const &even
     case RFQ_REQUEST:
       break;
     case QUOTE_STATUS_REPORT:
+      // XXX FIXME TODO
       break;
     case QUOTE_RESPONSE:
       break;
@@ -343,7 +344,8 @@ void Controller::operator()(Trace<codec::fix::BusinessMessageReject> const &even
       break;
     case QUOTE_STATUS_REQUEST:
       break;
-    case MASS_QUOTE_ACKNOWLEDGEMENT:
+    case MASS_QUOTE_ACK:
+      // XXX FIXME TODO
       break;
     case SECURITY_DEFINITION_REQUEST:
       dispatch(subscriptions_.security_req_id);
@@ -766,6 +768,14 @@ void Controller::operator()(Trace<codec::fix::TradeCaptureReport> const &event) 
   } else {
     log::warn(R"(Internal error: trade_request_id="{}")"sv, req_id);
   }
+}
+
+void Controller::operator()(Trace<codec::fix::MassQuoteAck> const &) {
+  // XXX FIXME TODO
+}
+
+void Controller::operator()(Trace<codec::fix::QuoteStatusReport> const &) {
+  // XXX FIXME TODO
 }
 
 // client::Session::Handler
@@ -1649,6 +1659,14 @@ void Controller::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &
       }
       break;
   }
+}
+
+void Controller::operator()(Trace<codec::fix::MassQuote> const &, [[maybe_unused]] uint64_t session_id) {
+  // XXX FIXME TODO
+}
+
+void Controller::operator()(Trace<codec::fix::QuoteCancel> const &, [[maybe_unused]] uint64_t session_id) {
+  // XXX FIXME TODO
 }
 
 // utilities

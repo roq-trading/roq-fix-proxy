@@ -27,6 +27,8 @@
 #include "roq/codec/fix/market_data_request.hpp"
 #include "roq/codec/fix/market_data_request_reject.hpp"
 #include "roq/codec/fix/market_data_snapshot_full_refresh.hpp"
+#include "roq/codec/fix/mass_quote.hpp"
+#include "roq/codec/fix/mass_quote_ack.hpp"
 #include "roq/codec/fix/new_order_single.hpp"
 #include "roq/codec/fix/order_cancel_reject.hpp"
 #include "roq/codec/fix/order_cancel_replace_request.hpp"
@@ -36,6 +38,8 @@
 #include "roq/codec/fix/order_mass_status_request.hpp"
 #include "roq/codec/fix/order_status_request.hpp"
 #include "roq/codec/fix/position_report.hpp"
+#include "roq/codec/fix/quote_cancel.hpp"
+#include "roq/codec/fix/quote_status_report.hpp"
 #include "roq/codec/fix/reject.hpp"
 #include "roq/codec/fix/request_for_positions.hpp"
 #include "roq/codec/fix/request_for_positions_ack.hpp"
@@ -88,6 +92,9 @@ struct Session final : public io::net::ConnectionManager::Handler {
     // trades
     virtual void operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &) = 0;
     virtual void operator()(Trace<codec::fix::TradeCaptureReport> const &) = 0;
+    // quotes
+    virtual void operator()(Trace<codec::fix::MassQuoteAck> const &) = 0;
+    virtual void operator()(Trace<codec::fix::QuoteStatusReport> const &) = 0;
   };
 
   Session(Handler &, Settings const &, io::Context &, io::web::URI const &);
@@ -117,6 +124,9 @@ struct Session final : public io::net::ConnectionManager::Handler {
   void operator()(Trace<codec::fix::RequestForPositions> const &);
   // trades
   void operator()(Trace<codec::fix::TradeCaptureReportRequest> const &);
+  // quotes
+  void operator()(Trace<codec::fix::MassQuote> const &);
+  void operator()(Trace<codec::fix::QuoteCancel> const &);
 
  private:
   enum class State;
@@ -186,6 +196,11 @@ struct Session final : public io::net::ConnectionManager::Handler {
 
   void operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &, roq::fix::Header const &);
   void operator()(Trace<codec::fix::TradeCaptureReport> const &, roq::fix::Header const &);
+
+  // - quotes
+
+  void operator()(Trace<codec::fix::MassQuoteAck> const &, roq::fix::Header const &);
+  void operator()(Trace<codec::fix::QuoteStatusReport> const &, roq::fix::Header const &);
 
   // outbound
 

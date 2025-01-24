@@ -147,6 +147,14 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
   send(event);
 }
 
+void Session::operator()(Trace<codec::fix::MassQuote> const &event) {
+  send(event);
+}
+
+void Session::operator()(Trace<codec::fix::QuoteCancel> const &event) {
+  send(event);
+}
+
 void Session::operator()(Session::State state) {
   if (utils::update(state_, state))
     log::debug("state={}"sv, state);
@@ -351,6 +359,17 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
       dispatch(event, trade_capture_report);
       break;
     }
+      // quotes
+    case MASS_QUOTE_ACK: {
+      auto mass_quote_ack = codec::fix::MassQuoteAck::create(message, decode_buffer_, decode_buffer_2_);
+      dispatch(event, mass_quote_ack);
+      break;
+    }
+    case QUOTE_STATUS_REPORT: {
+      auto quote_status_report = codec::fix::QuoteStatusReport::create(message);
+      dispatch(event, quote_status_report);
+      break;
+    }
     default:
       log::warn("Unexpected msg_type={}"sv, header.msg_type);
   }
@@ -490,6 +509,18 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &
 void Session::operator()(Trace<codec::fix::TradeCaptureReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, trade_capture_report] = event;
   log::debug("trade_capture_report={}, trace_info={}"sv, trade_capture_report, trace_info);
+  handler_(event);
+}
+
+void Session::operator()(Trace<codec::fix::MassQuoteAck> const &event, roq::fix::Header const &) {
+  auto &[trace_info, mass_quote_ack] = event;
+  log::debug("mass_quote_ack={}, trace_info={}"sv, mass_quote_ack, trace_info);
+  handler_(event);
+}
+
+void Session::operator()(Trace<codec::fix::QuoteStatusReport> const &event, roq::fix::Header const &) {
+  auto &[trace_info, quote_status_report] = event;
+  log::debug("quote_status_report={}, trace_info={}"sv, quote_status_report, trace_info);
   handler_(event);
 }
 

@@ -24,6 +24,8 @@
 #include "roq/codec/fix/market_data_request.hpp"
 #include "roq/codec/fix/market_data_request_reject.hpp"
 #include "roq/codec/fix/market_data_snapshot_full_refresh.hpp"
+#include "roq/codec/fix/mass_quote.hpp"
+#include "roq/codec/fix/mass_quote_ack.hpp"
 #include "roq/codec/fix/new_order_single.hpp"
 #include "roq/codec/fix/order_cancel_reject.hpp"
 #include "roq/codec/fix/order_cancel_replace_request.hpp"
@@ -33,6 +35,8 @@
 #include "roq/codec/fix/order_mass_status_request.hpp"
 #include "roq/codec/fix/order_status_request.hpp"
 #include "roq/codec/fix/position_report.hpp"
+#include "roq/codec/fix/quote_cancel.hpp"
+#include "roq/codec/fix/quote_status_report.hpp"
 #include "roq/codec/fix/reject.hpp"
 #include "roq/codec/fix/request_for_positions.hpp"
 #include "roq/codec/fix/request_for_positions_ack.hpp"
@@ -81,6 +85,9 @@ struct Session final : public io::net::tcp::Connection::Handler {
     virtual void operator()(Trace<codec::fix::RequestForPositions> const &, uint64_t session_id) = 0;
     // trades
     virtual void operator()(Trace<codec::fix::TradeCaptureReportRequest> const &, uint64_t session_id) = 0;
+    // quotes
+    virtual void operator()(Trace<codec::fix::MassQuote> const &, uint64_t session_id) = 0;
+    virtual void operator()(Trace<codec::fix::QuoteCancel> const &, uint64_t session_id) = 0;
   };
 
   Session(Handler &, uint64_t session_id, io::net::tcp::Connection::Factory &, Shared &);
@@ -113,6 +120,9 @@ struct Session final : public io::net::tcp::Connection::Handler {
   // trades
   void operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &);
   void operator()(Trace<codec::fix::TradeCaptureReport> const &);
+  // quotes
+  void operator()(Trace<codec::fix::MassQuoteAck> const &);
+  void operator()(Trace<codec::fix::QuoteStatusReport> const &);
 
  protected:
   enum class State {
@@ -180,6 +190,9 @@ struct Session final : public io::net::tcp::Connection::Handler {
 
   void operator()(Trace<codec::fix::RequestForPositions> const &, roq::fix::Header const &);
 
+  void operator()(Trace<codec::fix::MassQuote> const &, roq::fix::Header const &);
+  void operator()(Trace<codec::fix::QuoteCancel> const &, roq::fix::Header const &);
+
   void send_reject_and_close(roq::fix::Header const &, roq::fix::SessionRejectReason, std::string_view const &text);
 
   void send_business_message_reject(roq::fix::Header const &, std::string_view const &ref_id, roq::fix::BusinessRejectReason, std::string_view const &text);
@@ -209,6 +222,7 @@ struct Session final : public io::net::tcp::Connection::Handler {
   bool waiting_for_heartbeat_ = {};
   // buffer
   std::vector<std::byte> decode_buffer_;
+  std::vector<std::byte> decode_buffer_2_;
 };
 
 }  // namespace client

@@ -77,6 +77,9 @@ struct Controller final : public io::sys::Signal::Handler,
   // - trades
   void operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &) override;
   void operator()(Trace<codec::fix::TradeCaptureReport> const &) override;
+  // - quotes
+  void operator()(Trace<codec::fix::MassQuoteAck> const &) override;
+  void operator()(Trace<codec::fix::QuoteStatusReport> const &) override;
 
   // client::Session::Handler
   void operator()(Trace<client::Session::Disconnected> const &, uint64_t session_id) override;
@@ -99,6 +102,9 @@ struct Controller final : public io::sys::Signal::Handler,
   void operator()(Trace<codec::fix::RequestForPositions> const &, uint64_t session_id) override;
   // - trades
   void operator()(Trace<codec::fix::TradeCaptureReportRequest> const &, uint64_t session_id) override;
+  // - quotes
+  void operator()(Trace<codec::fix::MassQuote> const &, uint64_t session_id) override;
+  void operator()(Trace<codec::fix::QuoteCancel> const &, uint64_t session_id) override;
 
   // utilities
 
