@@ -62,7 +62,7 @@ endif()
 
 find_program(ROQ_AUTOGEN roq-autogen REQUIRED)
 
-set(TEMPLATE_DIR ${CMAKE_SOURCE_DIR}/autogen)
+set(TEMPLATE_DIR ${CMAKE_SOURCE_DIR}/scripts/templates)
 
 # clang-format
 

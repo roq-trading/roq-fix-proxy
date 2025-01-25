@@ -32,7 +32,7 @@ roq_autogen_hpp(
   TEMPLATE_DIR
   ${TEMPLATE_DIR}
   TEMPLATE_TYPE
-  "state")
+  "flags")
 
 add_custom_target(${TARGET_NAME}-autogen-headers ALL DEPENDS ${AUTOGEN_HEADERS})
 
@@ -44,7 +44,7 @@ roq_autogen_cpp(
   TEMPLATE_DIR
   ${TEMPLATE_DIR}
   TEMPLATE_TYPE
-  "state")
+  "flags")
 
 roq_gitignore(
   OUTPUT
