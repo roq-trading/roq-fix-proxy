@@ -56,55 +56,55 @@ struct Controller final : public io::sys::Signal::Handler,
   void operator()(Trace<server::Session::Ready> const &) override;
   void operator()(Trace<server::Session::Disconnected> const &) override;
   //
-  void operator()(Trace<codec::fix::BusinessMessageReject> const &) override;
+  void operator()(Trace<roq::fix::codec::BusinessMessageReject> const &) override;
   // - user
-  void operator()(Trace<codec::fix::UserResponse> const &) override;
+  void operator()(Trace<roq::fix::codec::UserResponse> const &) override;
   // - security
-  void operator()(Trace<codec::fix::SecurityList> const &) override;
-  void operator()(Trace<codec::fix::SecurityDefinition> const &) override;
-  void operator()(Trace<codec::fix::SecurityStatus> const &) override;
+  void operator()(Trace<roq::fix::codec::SecurityList> const &) override;
+  void operator()(Trace<roq::fix::codec::SecurityDefinition> const &) override;
+  void operator()(Trace<roq::fix::codec::SecurityStatus> const &) override;
   // - market data
-  void operator()(Trace<codec::fix::MarketDataRequestReject> const &) override;
-  void operator()(Trace<codec::fix::MarketDataSnapshotFullRefresh> const &) override;
-  void operator()(Trace<codec::fix::MarketDataIncrementalRefresh> const &) override;
+  void operator()(Trace<roq::fix::codec::MarketDataRequestReject> const &) override;
+  void operator()(Trace<roq::fix::codec::MarketDataSnapshotFullRefresh> const &) override;
+  void operator()(Trace<roq::fix::codec::MarketDataIncrementalRefresh> const &) override;
   // - orders
-  void operator()(Trace<codec::fix::OrderCancelReject> const &) override;
-  void operator()(Trace<codec::fix::OrderMassCancelReport> const &) override;
-  void operator()(Trace<codec::fix::ExecutionReport> const &) override;
+  void operator()(Trace<roq::fix::codec::OrderCancelReject> const &) override;
+  void operator()(Trace<roq::fix::codec::OrderMassCancelReport> const &) override;
+  void operator()(Trace<roq::fix::codec::ExecutionReport> const &) override;
   // - positions
-  void operator()(Trace<codec::fix::RequestForPositionsAck> const &) override;
-  void operator()(Trace<codec::fix::PositionReport> const &) override;
+  void operator()(Trace<roq::fix::codec::RequestForPositionsAck> const &) override;
+  void operator()(Trace<roq::fix::codec::PositionReport> const &) override;
   // - trades
-  void operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &) override;
-  void operator()(Trace<codec::fix::TradeCaptureReport> const &) override;
+  void operator()(Trace<roq::fix::codec::TradeCaptureReportRequestAck> const &) override;
+  void operator()(Trace<roq::fix::codec::TradeCaptureReport> const &) override;
   // - quotes
-  void operator()(Trace<codec::fix::MassQuoteAck> const &) override;
-  void operator()(Trace<codec::fix::QuoteStatusReport> const &) override;
+  void operator()(Trace<roq::fix::codec::MassQuoteAck> const &) override;
+  void operator()(Trace<roq::fix::codec::QuoteStatusReport> const &) override;
 
   // client::Session::Handler
   void operator()(Trace<client::Session::Disconnected> const &, uint64_t session_id) override;
   // - user
-  void operator()(Trace<codec::fix::UserRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::UserRequest> const &, uint64_t session_id) override;
   // - security
-  void operator()(Trace<codec::fix::SecurityListRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::SecurityDefinitionRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::SecurityStatusRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::SecurityListRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::SecurityDefinitionRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::SecurityStatusRequest> const &, uint64_t session_id) override;
   // - market data
-  void operator()(Trace<codec::fix::MarketDataRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::MarketDataRequest> const &, uint64_t session_id) override;
   // - orders
-  void operator()(Trace<codec::fix::OrderStatusRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::NewOrderSingle> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::OrderCancelRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::OrderMassStatusRequest> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::OrderMassCancelRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::OrderStatusRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::NewOrderSingle> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::OrderCancelRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &, uint64_t session_id) override;
   // - positions
-  void operator()(Trace<codec::fix::RequestForPositions> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::RequestForPositions> const &, uint64_t session_id) override;
   // - trades
-  void operator()(Trace<codec::fix::TradeCaptureReportRequest> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const &, uint64_t session_id) override;
   // - quotes
-  void operator()(Trace<codec::fix::MassQuote> const &, uint64_t session_id) override;
-  void operator()(Trace<codec::fix::QuoteCancel> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::MassQuote> const &, uint64_t session_id) override;
+  void operator()(Trace<roq::fix::codec::QuoteCancel> const &, uint64_t session_id) override;
 
   // utilities
 

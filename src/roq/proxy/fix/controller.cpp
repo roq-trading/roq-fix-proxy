@@ -66,7 +66,7 @@ template <typename T>
 auto get_client_from_parties(T &value) -> std::string_view {
   using value_type = std::remove_cvref<T>::type;
   auto const &party_ids = [&]() {
-    if constexpr (std::is_same<value_type, roq::codec::fix::TradeCaptureReport>::value) {
+    if constexpr (std::is_same<value_type, roq::fix::codec::TradeCaptureReport>::value) {
       // assert(!std::empty(value.no_sides));
       return value.no_sides[0].no_party_ids;
     } else {
@@ -177,7 +177,7 @@ void Controller::operator()(Trace<server::Session::Disconnected> const &) {
   // XXX FIXME clear cl_ord_id_ ???
 }
 
-void Controller::operator()(Trace<codec::fix::BusinessMessageReject> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::BusinessMessageReject> const &event) {
   auto dispatch = [&](auto &mapping) {
     auto iter = mapping.server_to_client.find(event.value.business_reject_ref_id);
     if (iter != std::end(mapping.server_to_client)) {
@@ -403,7 +403,7 @@ void Controller::operator()(Trace<codec::fix::BusinessMessageReject> const &even
   // note! must be an internal issue
 }
 
-void Controller::operator()(Trace<codec::fix::UserResponse> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::UserResponse> const &event) {
   auto &user_response = event.value;
   auto iter = subscriptions_.user.server_to_client.find(user_response.user_request_id);
   if (iter != std::end(subscriptions_.user.server_to_client)) {
@@ -433,7 +433,7 @@ void Controller::operator()(Trace<codec::fix::UserResponse> const &event) {
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityList> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityList> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     auto failure = event.value.security_request_result != roq::fix::SecurityRequestResult::VALID;
@@ -454,7 +454,7 @@ void Controller::operator()(Trace<codec::fix::SecurityList> const &event) {
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityDefinition> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityDefinition> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     auto failure = event.value.security_response_type != roq::fix::SecurityResponseType::ACCEPT_SECURITY_PROPOSAL_AS_IS;
@@ -475,7 +475,7 @@ void Controller::operator()(Trace<codec::fix::SecurityDefinition> const &event) 
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityStatus> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityStatus> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     // note! there is not way to detect a reject
@@ -496,7 +496,7 @@ void Controller::operator()(Trace<codec::fix::SecurityStatus> const &event) {
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MarketDataRequestReject> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::MarketDataRequestReject> const &event) {
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
     auto market_data_request_reject = event.value;
     market_data_request_reject.md_req_id = req_id;
@@ -513,7 +513,7 @@ void Controller::operator()(Trace<codec::fix::MarketDataRequestReject> const &ev
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MarketDataSnapshotFullRefresh> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::MarketDataSnapshotFullRefresh> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     remove = !keep_alive;
@@ -533,7 +533,7 @@ void Controller::operator()(Trace<codec::fix::MarketDataSnapshotFullRefresh> con
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MarketDataIncrementalRefresh> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::MarketDataIncrementalRefresh> const &event) {
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
     auto market_data_incremental_refresh = event.value;
     market_data_incremental_refresh.md_req_id = req_id;
@@ -546,7 +546,7 @@ void Controller::operator()(Trace<codec::fix::MarketDataIncrementalRefresh> cons
   // note! delivery failure is valid (an unsubscribe request could already have removed md_req_id)
 }
 
-void Controller::operator()(Trace<codec::fix::OrderCancelReject> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::OrderCancelReject> const &event) {
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
     auto orig_cl_ord_id = get_client_cl_ord_id(event.value.orig_cl_ord_id);
     auto order_cancel_reject = event.value;
@@ -562,7 +562,7 @@ void Controller::operator()(Trace<codec::fix::OrderCancelReject> const &event) {
     log::warn(R"(Internal error: cl_ord_id="{}")"sv, req_id);
 }
 
-void Controller::operator()(Trace<codec::fix::OrderMassCancelReport> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelReport> const &event) {
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
     auto order_mass_cancel_report = event.value;
     order_mass_cancel_report.cl_ord_id = req_id;
@@ -576,7 +576,7 @@ void Controller::operator()(Trace<codec::fix::OrderMassCancelReport> const &even
     log::warn(R"(Internal error: cl_ord_id="{}")"sv, req_id);
 }
 
-void Controller::operator()(Trace<codec::fix::ExecutionReport> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::ExecutionReport> const &event) {
   auto execution_report = event.value;
   auto cl_ord_id = execution_report.cl_ord_id;
   auto orig_cl_ord_id = execution_report.orig_cl_ord_id;
@@ -667,7 +667,7 @@ void Controller::operator()(Trace<codec::fix::ExecutionReport> const &event) {
   }
 }
 
-void Controller::operator()(Trace<codec::fix::RequestForPositionsAck> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::RequestForPositionsAck> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, [[maybe_unused]] auto keep_alive) {
     auto failure = event.value.pos_req_result != roq::fix::PosReqResult::VALID || event.value.pos_req_status == roq::fix::PosReqStatus::REJECTED;
@@ -697,7 +697,7 @@ void Controller::operator()(Trace<codec::fix::RequestForPositionsAck> const &eve
   }
 }
 
-void Controller::operator()(Trace<codec::fix::PositionReport> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::PositionReport> const &event) {
   if (total_num_pos_reports_)
     --total_num_pos_reports_;
   if (!total_num_pos_reports_)
@@ -727,7 +727,7 @@ void Controller::operator()(Trace<codec::fix::PositionReport> const &event) {
   }
 }
 
-void Controller::operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequestAck> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     remove = !keep_alive;
@@ -747,7 +747,7 @@ void Controller::operator()(Trace<codec::fix::TradeCaptureReportRequestAck> cons
   }
 }
 
-void Controller::operator()(Trace<codec::fix::TradeCaptureReport> const &event) {
+void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReport> const &event) {
   auto remove = true;
   auto dispatch = [&](auto session_id, auto &req_id, auto keep_alive) {
     if (!event.value.last_rpt_requested)
@@ -770,11 +770,11 @@ void Controller::operator()(Trace<codec::fix::TradeCaptureReport> const &event) 
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MassQuoteAck> const &) {
+void Controller::operator()(Trace<roq::fix::codec::MassQuoteAck> const &) {
   // XXX FIXME TODO
 }
 
-void Controller::operator()(Trace<codec::fix::QuoteStatusReport> const &) {
+void Controller::operator()(Trace<roq::fix::codec::QuoteStatusReport> const &) {
   // XXX FIXME TODO
 }
 
@@ -784,7 +784,7 @@ void Controller::operator()(Trace<client::Session::Disconnected> const &event, u
   auto unsubscribe_market_data = [&](auto &req_id) {
     if (!ready())
       return;
-    auto market_data_request = codec::fix::MarketDataRequest{
+    auto market_data_request = roq::fix::codec::MarketDataRequest{
         .md_req_id = req_id,
         .subscription_request_type = roq::fix::SubscriptionRequestType::UNSUBSCRIBE,
         .market_depth = {},
@@ -815,7 +815,7 @@ void Controller::operator()(Trace<client::Session::Disconnected> const &event, u
     auto &username_2 = (*iter_2).second;
     if (ready()) {
       auto user_request_id = shared_.create_request_id();
-      auto user_request = codec::fix::UserRequest{
+      auto user_request = roq::fix::codec::UserRequest{
           .user_request_id = user_request_id,
           .user_request_type = roq::fix::UserRequestType::LOG_OFF_USER,
           .username = username_2,
@@ -840,7 +840,7 @@ void Controller::operator()(Trace<client::Session::Disconnected> const &event, u
   }
 }
 
-void Controller::operator()(Trace<codec::fix::UserRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::UserRequest> const &event, uint64_t session_id) {
   auto &user_request = event.value;
   switch (user_request.user_request_type) {
     using enum roq::fix::UserRequestType;
@@ -864,12 +864,12 @@ void Controller::operator()(Trace<codec::fix::UserRequest> const &event, uint64_
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityListRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityListRequest> const &event, uint64_t session_id) {
   auto &security_list_request = event.value;
   auto req_id = security_list_request.security_req_id;
   auto reject = [&]() {
     auto request_id = shared_.create_request_id();
-    auto security_list = roq::codec::fix::SecurityList{
+    auto security_list = roq::fix::codec::SecurityList{
         .security_req_id = req_id,
         .security_response_id = request_id,
         .security_request_result = roq::fix::SecurityRequestResult::INVALID_OR_UNSUPPORTED,
@@ -935,12 +935,12 @@ void Controller::operator()(Trace<codec::fix::SecurityListRequest> const &event,
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityDefinitionRequest> const &event, uint64_t session_id) {
   auto &security_definition_request = event.value;
   auto req_id = security_definition_request.security_req_id;
   auto reject = [&]() {
     auto request_id = shared_.create_request_id();
-    auto security_definition = codec::fix::SecurityDefinition{
+    auto security_definition = roq::fix::codec::SecurityDefinition{
         .security_req_id = security_definition_request.security_req_id,
         .security_response_id = request_id,
         .security_response_type = roq::fix::SecurityResponseType::REJECT_SECURITY_PROPOSAL,
@@ -1011,12 +1011,12 @@ void Controller::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &
   }
 }
 
-void Controller::operator()(Trace<codec::fix::SecurityStatusRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::SecurityStatusRequest> const &event, uint64_t session_id) {
   auto &security_status_request = event.value;
   auto req_id = security_status_request.security_status_req_id;
   auto reject = [&]() {
     // note! protocol doesn't have a proper solution for reject
-    auto security_status = codec::fix::SecurityStatus{
+    auto security_status = roq::fix::codec::SecurityStatus{
         .security_status_req_id = security_status_request.security_status_req_id,
         .symbol = security_status_request.symbol,
         .security_exchange = security_status_request.security_exchange,
@@ -1084,11 +1084,11 @@ void Controller::operator()(Trace<codec::fix::SecurityStatusRequest> const &even
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MarketDataRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &event, uint64_t session_id) {
   auto market_data_request = event.value;
   auto req_id = market_data_request.md_req_id;
   auto reject = [&](auto md_req_rej_reason, auto &text) {
-    auto market_data_request_reject = roq::codec::fix::MarketDataRequestReject{
+    auto market_data_request_reject = roq::fix::codec::MarketDataRequestReject{
         .md_req_id = req_id,
         .md_req_rej_reason = md_req_rej_reason,
         .text = text,
@@ -1156,11 +1156,11 @@ void Controller::operator()(Trace<codec::fix::MarketDataRequest> const &event, u
   }
 }
 
-void Controller::operator()(Trace<codec::fix::OrderStatusRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &event, uint64_t session_id) {
   auto &order_status_request = event.value;
   auto reject = [&](auto ord_rej_reason, auto &text) {
     auto request_id = shared_.create_request_id();
-    auto execution_report = codec::fix::ExecutionReport{
+    auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
         .secondary_cl_ord_id = {},
         .cl_ord_id = order_status_request.cl_ord_id,
@@ -1229,12 +1229,12 @@ void Controller::operator()(Trace<codec::fix::OrderStatusRequest> const &event, 
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, false);
 }
 
-void Controller::operator()(Trace<codec::fix::NewOrderSingle> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event, uint64_t session_id) {
   auto &new_order_single = event.value;
   auto reject = [&](auto ord_rej_reason, auto &text) {
     log::warn(R"(DEBUG: REJECT ord_rej_reason={}, text="{}")"sv, ord_rej_reason, text);
     auto request_id = shared_.create_request_id();
-    auto execution_report = codec::fix::ExecutionReport{
+    auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
         .secondary_cl_ord_id = {},
         .cl_ord_id = new_order_single.cl_ord_id,
@@ -1297,11 +1297,11 @@ void Controller::operator()(Trace<codec::fix::NewOrderSingle> const &event, uint
   add_req_id(mapping, req_id, request_id, session_id, true);
 }
 
-void Controller::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const &event, uint64_t session_id) {
   auto &order_cancel_replace_request = event.value;
   auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
     log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
-    auto order_cancel_reject = codec::fix::OrderCancelReject{
+    auto order_cancel_reject = roq::fix::codec::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
         .cl_ord_id = order_cancel_replace_request.cl_ord_id,            // required
@@ -1345,11 +1345,11 @@ void Controller::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, true);
 }
 
-void Controller::operator()(Trace<codec::fix::OrderCancelRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &event, uint64_t session_id) {
   auto &order_cancel_request = event.value;
   auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
     log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
-    auto order_cancel_reject = codec::fix::OrderCancelReject{
+    auto order_cancel_reject = roq::fix::codec::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
         .cl_ord_id = order_cancel_request.cl_ord_id,            // required
@@ -1393,11 +1393,11 @@ void Controller::operator()(Trace<codec::fix::OrderCancelRequest> const &event, 
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, true);
 }
 
-void Controller::operator()(Trace<codec::fix::OrderMassStatusRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &event, uint64_t session_id) {
   auto &order_mass_status_request = event.value;
   auto reject = [&](auto ord_rej_reason, auto &text) {
     auto request_id = shared_.create_request_id();
-    auto execution_report = codec::fix::ExecutionReport{
+    auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
         .secondary_cl_ord_id = {},
         .cl_ord_id = {},
@@ -1461,10 +1461,10 @@ void Controller::operator()(Trace<codec::fix::OrderMassStatusRequest> const &eve
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, false);
 }
 
-void Controller::operator()(Trace<codec::fix::OrderMassCancelRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &event, uint64_t session_id) {
   auto &order_mass_cancel_request = event.value;
   auto reject = [&](auto order_mass_reject_reason, auto &text) {
-    auto order_mass_cancel_report = codec::fix::OrderMassCancelReport{
+    auto order_mass_cancel_report = roq::fix::codec::OrderMassCancelReport{
         .cl_ord_id = order_mass_cancel_request.cl_ord_id,
         .order_id = order_mass_cancel_request.cl_ord_id,                                 // required
         .mass_cancel_request_type = order_mass_cancel_request.mass_cancel_request_type,  // required
@@ -1503,12 +1503,12 @@ void Controller::operator()(Trace<codec::fix::OrderMassCancelRequest> const &eve
   mapping.server_to_client.try_emplace(request_id, session_id, req_id, false);
 }
 
-void Controller::operator()(Trace<codec::fix::RequestForPositions> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &event, uint64_t session_id) {
   auto &request_for_positions = event.value;
   auto req_id = request_for_positions.pos_req_id;
   auto reject = [&](auto &text) {
     auto request_id = shared_.create_request_id();
-    auto request_for_positions_ack = codec::fix::RequestForPositionsAck{
+    auto request_for_positions_ack = roq::fix::codec::RequestForPositionsAck{
         .pos_maint_rpt_id = request_id,  // required
         .pos_req_id = req_id,
         .total_num_pos_reports = {},
@@ -1586,12 +1586,12 @@ void Controller::operator()(Trace<codec::fix::RequestForPositions> const &event,
   }
 }
 
-void Controller::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &event, uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const &event, uint64_t session_id) {
   auto &trade_capture_report_request = event.value;
   auto req_id = trade_capture_report_request.trade_request_id;
   auto reject = [&](auto &text) {
     auto request_id = shared_.create_request_id();
-    auto trade_capture_report_request_ack = codec::fix::TradeCaptureReportRequestAck{
+    auto trade_capture_report_request_ack = roq::fix::codec::TradeCaptureReportRequestAck{
         .trade_request_id = req_id,                                             // required
         .trade_request_type = trade_capture_report_request.trade_request_type,  // required
         .trade_request_result = roq::fix::TradeRequestResult::OTHER,            // required
@@ -1661,11 +1661,11 @@ void Controller::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &
   }
 }
 
-void Controller::operator()(Trace<codec::fix::MassQuote> const &, [[maybe_unused]] uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::MassQuote> const &, [[maybe_unused]] uint64_t session_id) {
   // XXX FIXME TODO
 }
 
-void Controller::operator()(Trace<codec::fix::QuoteCancel> const &, [[maybe_unused]] uint64_t session_id) {
+void Controller::operator()(Trace<roq::fix::codec::QuoteCancel> const &, [[maybe_unused]] uint64_t session_id) {
   // XXX FIXME TODO
 }
 

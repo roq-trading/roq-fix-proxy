@@ -87,7 +87,7 @@ void Session::operator()(Event<Timer> const &event) {
     case WAITING_CREATE_ROUTE: {
       assert(user_response_timeout_.count());
       if (user_response_timeout_ < event.value.now) {
-        auto logout = codec::fix::Logout{
+        auto logout = roq::fix::codec::Logout{
             .text = ERROR_USER_RESPONSE_TIMEOUT,
         };
         send_and_close<2>(logout);
@@ -99,13 +99,13 @@ void Session::operator()(Event<Timer> const &event) {
         next_heartbeat_ = event.value.now + shared_.settings.client.heartbeat_freq;
         if (waiting_for_heartbeat_) {
           log::warn("Closing connection (reason: client did not send heartbeat)"sv);
-          auto logout = codec::fix::Logout{
+          auto logout = roq::fix::codec::Logout{
               .text = ERROR_MISSING_HEARTBEAT,
           };
           send_and_close<2>(logout);
         } else {
           auto test_req_id = fmt::format("{}"sv, event.value.now);  // XXX TODO something else
-          auto test_request = codec::fix::TestRequest{
+          auto test_request = roq::fix::codec::TestRequest{
               .test_req_id = test_req_id,
           };
           send<4>(test_request);
@@ -116,7 +116,7 @@ void Session::operator()(Event<Timer> const &event) {
     case WAITING_REMOVE_ROUTE: {
       assert(user_response_timeout_.count());
       if (user_response_timeout_ < event.value.now) {
-        auto logout = codec::fix::Logout{
+        auto logout = roq::fix::codec::Logout{
             .text = ERROR_USER_RESPONSE_TIMEOUT,
         };
         send_and_close<2>(logout);
@@ -129,13 +129,13 @@ void Session::operator()(Event<Timer> const &event) {
   }
 }
 
-void Session::operator()(Trace<codec::fix::BusinessMessageReject> const &event) {
+void Session::operator()(Trace<roq::fix::codec::BusinessMessageReject> const &event) {
   auto &[trace_info, business_message_reject] = event;
   if (ready())
     send<2>(business_message_reject);
 }
 
-void Session::operator()(Trace<codec::fix::UserResponse> const &event) {
+void Session::operator()(Trace<roq::fix::codec::UserResponse> const &event) {
   auto &[trace_info, user_response] = event;
   user_response_timeout_ = {};
   switch (state_) {
@@ -147,7 +147,7 @@ void Session::operator()(Trace<codec::fix::UserResponse> const &event) {
         using enum roq::fix::UserStatus;
         case LOGGED_IN: {
           auto heart_bt_int = std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.client.heartbeat_freq);
-          auto response = codec::fix::Logon{
+          auto response = roq::fix::codec::Logon{
               .encrypt_method = roq::fix::EncryptMethod::NONE,
               .heart_bt_int = static_cast<uint16_t>(heart_bt_int.count()),
               .raw_data_length = {},
@@ -176,7 +176,7 @@ void Session::operator()(Trace<codec::fix::UserResponse> const &event) {
           auto success = [&]() {
             // username_.clear();
             // party_id_.clear();
-            auto response = codec::fix::Logout{
+            auto response = roq::fix::codec::Logout{
                 .text = ERROR_GOODBYE,
             };
             send_and_close<2>(response);
@@ -197,91 +197,91 @@ void Session::operator()(Trace<codec::fix::UserResponse> const &event) {
   }
 }
 
-void Session::operator()(Trace<codec::fix::SecurityList> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityList> const &event) {
   auto &[trace_info, security_list] = event;
   if (ready())
     send<2>(security_list);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityDefinition> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityDefinition> const &event) {
   auto &[trace_info, security_definition] = event;
   if (ready())
     send<2>(security_definition);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityStatus> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityStatus> const &event) {
   auto &[trace_info, security_status] = event;
   if (ready())
     send<2>(security_status);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataRequestReject> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataRequestReject> const &event) {
   auto &[trace_info, market_data_request_reject] = event;
   if (ready())
     send<2>(market_data_request_reject);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataSnapshotFullRefresh> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataSnapshotFullRefresh> const &event) {
   auto &[trace_info, market_data_snapshot_full_refresh] = event;
   if (ready())
     send<2>(market_data_snapshot_full_refresh);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataIncrementalRefresh> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataIncrementalRefresh> const &event) {
   auto &[trace_info, market_data_incremental_refresh] = event;
   if (ready())
     send<2>(market_data_incremental_refresh);
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelReject> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelReject> const &event) {
   auto &[trace_info, order_cancel_reject] = event;
   if (ready())
     send<2>(order_cancel_reject);
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassCancelReport> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassCancelReport> const &event) {
   auto &[trace_info, order_mass_cancel_report] = event;
   if (ready())
     send<2>(order_mass_cancel_report);
 }
 
-void Session::operator()(Trace<codec::fix::ExecutionReport> const &event) {
+void Session::operator()(Trace<roq::fix::codec::ExecutionReport> const &event) {
   auto &[trace_info, execution_report] = event;
   if (ready())
     send<2>(execution_report);
 }
 
-void Session::operator()(Trace<codec::fix::RequestForPositionsAck> const &event) {
+void Session::operator()(Trace<roq::fix::codec::RequestForPositionsAck> const &event) {
   auto &[trace_info, request_for_positions_ack] = event;
   if (ready())
     send<2>(request_for_positions_ack);
 }
 
-void Session::operator()(Trace<codec::fix::PositionReport> const &event) {
+void Session::operator()(Trace<roq::fix::codec::PositionReport> const &event) {
   auto &[trace_info, position_report] = event;
   if (ready())
     send<2>(position_report);
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &event) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequestAck> const &event) {
   auto &[trace_info, trade_capture_report_request_ack] = event;
   if (ready())
     send<2>(trade_capture_report_request_ack);
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReport> const &event) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReport> const &event) {
   auto &[trace_info, trade_capture_report] = event;
   if (ready())
     send<2>(trade_capture_report);
 }
 
-void Session::operator()(Trace<codec::fix::MassQuoteAck> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MassQuoteAck> const &event) {
   auto &[trace_info, mass_quote_ack] = event;
   if (ready())
     send<2>(mass_quote_ack);
 }
 
-void Session::operator()(Trace<codec::fix::QuoteStatusReport> const &event) {
+void Session::operator()(Trace<roq::fix::codec::QuoteStatusReport> const &event) {
   auto &[trace_info, quote_status_report] = event;
   if (ready())
     send<2>(quote_status_report);
@@ -408,7 +408,7 @@ template <std::size_t level, typename T>
 void Session::send(T const &event) {
 #ifndef NDEBUG
   auto can_send = [&]() {
-    if constexpr (std::is_same<T, codec::fix::Logon>::value) {
+    if constexpr (std::is_same<T, roq::fix::codec::Logon>::value) {
       return state_ == State::WAITING_CREATE_ROUTE;
     }
     return state_ == State::READY;
@@ -471,73 +471,73 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
     using enum roq::fix::MsgType;
     // - session
     case TEST_REQUEST:
-      dispatch<codec::fix::TestRequest>(event);
+      dispatch<roq::fix::codec::TestRequest>(event);
       break;
     case RESEND_REQUEST:
-      dispatch<codec::fix::ResendRequest>(event);
+      dispatch<roq::fix::codec::ResendRequest>(event);
       break;
     case REJECT:
-      dispatch<codec::fix::Reject>(event);
+      dispatch<roq::fix::codec::Reject>(event);
       break;
     case HEARTBEAT:
-      dispatch<codec::fix::Heartbeat>(event);
+      dispatch<roq::fix::codec::Heartbeat>(event);
       break;
       // - authentication
     case LOGON:
-      dispatch<codec::fix::Logon>(event);
+      dispatch<roq::fix::codec::Logon>(event);
       break;
     case LOGOUT:
-      dispatch<codec::fix::Logout>(event);
+      dispatch<roq::fix::codec::Logout>(event);
       break;
       // - market data
     case TRADING_SESSION_STATUS_REQUEST:
-      dispatch<codec::fix::TradingSessionStatusRequest>(event);
+      dispatch<roq::fix::codec::TradingSessionStatusRequest>(event);
       break;
     case SECURITY_LIST_REQUEST:
-      dispatch<codec::fix::SecurityListRequest>(event);
+      dispatch<roq::fix::codec::SecurityListRequest>(event);
       break;
     case SECURITY_DEFINITION_REQUEST:
-      dispatch<codec::fix::SecurityDefinitionRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::SecurityDefinitionRequest>(event, decode_buffer_);
       break;
     case SECURITY_STATUS_REQUEST:
-      dispatch<codec::fix::SecurityStatusRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::SecurityStatusRequest>(event, decode_buffer_);
       break;
     case MARKET_DATA_REQUEST:
-      dispatch<codec::fix::MarketDataRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::MarketDataRequest>(event, decode_buffer_);
       break;
       // - order management
     case ORDER_STATUS_REQUEST:
-      dispatch<codec::fix::OrderStatusRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::OrderStatusRequest>(event, decode_buffer_);
       break;
     case ORDER_MASS_STATUS_REQUEST:
-      dispatch<codec::fix::OrderMassStatusRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::OrderMassStatusRequest>(event, decode_buffer_);
       break;
     case NEW_ORDER_SINGLE:
-      dispatch<codec::fix::NewOrderSingle>(event, decode_buffer_);
+      dispatch<roq::fix::codec::NewOrderSingle>(event, decode_buffer_);
       break;
     case ORDER_CANCEL_REQUEST:
-      dispatch<codec::fix::OrderCancelRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::OrderCancelRequest>(event, decode_buffer_);
       break;
     case ORDER_CANCEL_REPLACE_REQUEST:
-      dispatch<codec::fix::OrderCancelReplaceRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::OrderCancelReplaceRequest>(event, decode_buffer_);
       break;
     case ORDER_MASS_CANCEL_REQUEST:
-      dispatch<codec::fix::OrderMassCancelRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::OrderMassCancelRequest>(event, decode_buffer_);
       break;
       // - position management
     case REQUEST_FOR_POSITIONS:
-      dispatch<codec::fix::RequestForPositions>(event, decode_buffer_);
+      dispatch<roq::fix::codec::RequestForPositions>(event, decode_buffer_);
       break;
       // - trade capture
     case TRADE_CAPTURE_REPORT_REQUEST:
-      dispatch<codec::fix::TradeCaptureReportRequest>(event, decode_buffer_);
+      dispatch<roq::fix::codec::TradeCaptureReportRequest>(event, decode_buffer_);
       break;
       // - quotes
     case MASS_QUOTE:
-      dispatch<codec::fix::MassQuote>(event, decode_buffer_, decode_buffer_2_);
+      dispatch<roq::fix::codec::MassQuote>(event, decode_buffer_, decode_buffer_2_);
       break;
     case QUOTE_CANCEL:
-      dispatch<codec::fix::QuoteCancel>(event, decode_buffer_);
+      dispatch<roq::fix::codec::QuoteCancel>(event, decode_buffer_);
       break;
     default:
       log::warn("Unexpected: msg_type={}"sv, message.header.msg_type);
@@ -559,7 +559,7 @@ void Session::dispatch(Trace<roq::fix::Message> const &event, Args &&...args) {
   (*this)(event_2, message.header);
 }
 
-void Session::operator()(Trace<codec::fix::TestRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::TestRequest> const &event, roq::fix::Header const &header) {
   auto &[trace_info, test_request] = event;
   log::info<1>("test_request={}"sv, test_request);
   switch (state_) {
@@ -569,7 +569,7 @@ void Session::operator()(Trace<codec::fix::TestRequest> const &event, roq::fix::
       break;
     case WAITING_CREATE_ROUTE:
     case READY: {
-      auto heartbeat = codec::fix::Heartbeat{
+      auto heartbeat = roq::fix::codec::Heartbeat{
           .test_req_id = test_request.test_req_id,
       };
       send<4>(heartbeat);
@@ -582,7 +582,7 @@ void Session::operator()(Trace<codec::fix::TestRequest> const &event, roq::fix::
   }
 }
 
-void Session::operator()(Trace<codec::fix::ResendRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::ResendRequest> const &event, roq::fix::Header const &header) {
   auto &[trace_info, resend_request] = event;
   log::info<1>("resend_request={}"sv, resend_request);
   switch (state_) {
@@ -603,13 +603,13 @@ void Session::operator()(Trace<codec::fix::ResendRequest> const &event, roq::fix
   }
 }
 
-void Session::operator()(Trace<codec::fix::Reject> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::Reject> const &event, roq::fix::Header const &) {
   auto &[trace_info, reject] = event;
   log::warn("reject={}"sv, reject);
   close();
 }
 
-void Session::operator()(Trace<codec::fix::Heartbeat> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::Heartbeat> const &event, roq::fix::Header const &header) {
   auto &[trace_info, heartbeat] = event;
   log::info<1>("heartbeat={}"sv, heartbeat);
   switch (state_) {
@@ -632,7 +632,7 @@ void Session::operator()(Trace<codec::fix::Heartbeat> const &event, roq::fix::He
 
 // session
 
-void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::Logon> const &event, roq::fix::Header const &header) {
   auto &trace_info = event.trace_info;
   auto &logon = event.value;
   switch (state_) {
@@ -674,7 +674,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
         party_id_ = fmt::format("{}"sv, strategy_id);
         try {
           auto user_request_id = shared_.create_request_id();
-          auto user_request = codec::fix::UserRequest{
+          auto user_request = roq::fix::codec::UserRequest{
               .user_request_id = user_request_id,
               .user_request_type = roq::fix::UserRequestType::LOG_ON_USER,
               .username = party_id_,
@@ -709,7 +709,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
   }
 }
 
-void Session::operator()(Trace<codec::fix::Logout> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::Logout> const &event, roq::fix::Header const &header) {
   auto &[trace_info, logout] = event;
   log::info<1>("logout={}"sv, logout);
   switch (state_) {
@@ -721,7 +721,7 @@ void Session::operator()(Trace<codec::fix::Logout> const &event, roq::fix::Heade
     case READY: {
       assert(!std::empty(party_id_));
       auto user_request_id = shared_.create_request_id();
-      auto user_request = codec::fix::UserRequest{
+      auto user_request = roq::fix::codec::UserRequest{
           .user_request_id = user_request_id,
           .user_request_type = roq::fix::UserRequestType::LOG_OFF_USER,
           .username = party_id_,
@@ -743,7 +743,7 @@ void Session::operator()(Trace<codec::fix::Logout> const &event, roq::fix::Heade
   }
 }
 
-void Session::operator()(Trace<codec::fix::TradingSessionStatusRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::TradingSessionStatusRequest> const &event, roq::fix::Header const &header) {
   auto &[trace_info, trading_session_status_request] = event;
   send_business_message_reject(
       header,
@@ -752,7 +752,7 @@ void Session::operator()(Trace<codec::fix::TradingSessionStatusRequest> const &e
       ERROR_UNEXPECTED_MSG_TYPE);  // XXX TODO
 }
 
-void Session::operator()(Trace<codec::fix::SecurityListRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::SecurityListRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -776,7 +776,7 @@ void Session::operator()(Trace<codec::fix::SecurityListRequest> const &event, ro
   }
 }
 
-void Session::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::SecurityDefinitionRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -800,7 +800,7 @@ void Session::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &eve
   }
 }
 
-void Session::operator()(Trace<codec::fix::SecurityStatusRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::SecurityStatusRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -824,7 +824,7 @@ void Session::operator()(Trace<codec::fix::SecurityStatusRequest> const &event, 
   }
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -848,7 +848,7 @@ void Session::operator()(Trace<codec::fix::MarketDataRequest> const &event, roq:
   }
 }
 
-void Session::operator()(Trace<codec::fix::OrderStatusRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -876,7 +876,7 @@ void Session::operator()(Trace<codec::fix::OrderStatusRequest> const &event, roq
   }
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassStatusRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -903,7 +903,7 @@ void Session::operator()(Trace<codec::fix::OrderMassStatusRequest> const &event,
   }
 }
 
-void Session::operator()(Trace<codec::fix::NewOrderSingle> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -930,7 +930,7 @@ void Session::operator()(Trace<codec::fix::NewOrderSingle> const &event, roq::fi
   }
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -963,7 +963,7 @@ void Session::operator()(Trace<codec::fix::OrderCancelRequest> const &event, roq
   }
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -996,7 +996,7 @@ void Session::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &eve
   }
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassCancelRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -1023,7 +1023,7 @@ void Session::operator()(Trace<codec::fix::OrderMassCancelRequest> const &event,
   }
 }
 
-void Session::operator()(Trace<codec::fix::RequestForPositions> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::RequestForPositions> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -1051,7 +1051,7 @@ void Session::operator()(Trace<codec::fix::RequestForPositions> const &event, ro
   }
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &event, roq::fix::Header const &header) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const &event, roq::fix::Header const &header) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
@@ -1079,18 +1079,18 @@ void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &eve
   }
 }
 
-void Session::operator()(Trace<codec::fix::MassQuote> const &, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::MassQuote> const &, roq::fix::Header const &) {
   log::fatal("NOT IMPLEMENTED"sv);
 }
 
-void Session::operator()(Trace<codec::fix::QuoteCancel> const &, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::QuoteCancel> const &, roq::fix::Header const &) {
   log::fatal("NOT IMPLEMENTED"sv);
 }
 
 // helpers
 
 void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::SessionRejectReason session_reject_reason, std::string_view const &text) {
-  auto response = codec::fix::Reject{
+  auto response = roq::fix::codec::Reject{
       .ref_seq_num = header.msg_seq_num,
       .text = text,
       .ref_tag_id = {},
@@ -1103,7 +1103,7 @@ void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::Se
 
 void Session::send_business_message_reject(
     roq::fix::Header const &header, std::string_view const &ref_id, roq::fix::BusinessRejectReason business_reject_reason, std::string_view const &text) {
-  auto response = codec::fix::BusinessMessageReject{
+  auto response = roq::fix::codec::BusinessMessageReject{
       .ref_seq_num = header.msg_seq_num,
       .ref_msg_type = header.msg_type,                   // required
       .business_reject_ref_id = ref_id,                  // required (sometimes)
@@ -1119,7 +1119,7 @@ bool Session::add_party_ids(Trace<T> const &event, Callback callback) const {
   assert(!std::empty(party_id_));
   auto &[trace_info, value] = event;
   if (std::empty(value.no_party_ids)) {
-    auto party = codec::fix::Party{
+    auto party = roq::fix::codec::Party{
         .party_id = party_id_,
         .party_id_source = roq::fix::PartyIDSource::PROPRIETARY_CUSTOM_CODE,
         .party_role = roq::fix::PartyRole::CLIENT_ID,

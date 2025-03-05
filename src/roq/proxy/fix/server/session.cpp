@@ -91,67 +91,67 @@ bool Session::ready() const {
   return state_ == State::READY;
 }
 
-void Session::operator()(Trace<codec::fix::UserRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::UserRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityListRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityListRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityDefinitionRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityDefinitionRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityStatusRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::SecurityStatusRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderStatusRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::NewOrderSingle> const &event) {
+void Session::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event) {
   log::debug("new_order_single={}"sv, event.value);
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelReplaceRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const &event) {
   log::debug("order_cancel_replace_request={}"sv, event.value);
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &event) {
   log::debug("order_cancel_request={}"sv, event.value);
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassStatusRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassCancelRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &event) {
   log::debug("order_cancel_request={}"sv, event.value);
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::RequestForPositions> const &event) {
+void Session::operator()(Trace<roq::fix::codec::RequestForPositions> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReportRequest> const &event) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::MassQuote> const &event) {
+void Session::operator()(Trace<roq::fix::codec::MassQuote> const &event) {
   send(event);
 }
 
-void Session::operator()(Trace<codec::fix::QuoteCancel> const &event) {
+void Session::operator()(Trace<roq::fix::codec::QuoteCancel> const &event) {
   send(event);
 }
 
@@ -248,125 +248,125 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
     using enum roq::fix::MsgType;
     // session
     case REJECT: {
-      auto reject = codec::fix::Reject::create(message);
+      auto reject = roq::fix::codec::Reject::create(message);
       dispatch(event, reject);
       break;
     }
     case RESEND_REQUEST: {
-      auto resend_request = codec::fix::ResendRequest::create(message);
+      auto resend_request = roq::fix::codec::ResendRequest::create(message);
       dispatch(event, resend_request);
       break;
     }
     case LOGON: {
-      auto logon = codec::fix::Logon::create(message);
+      auto logon = roq::fix::codec::Logon::create(message);
       dispatch(event, logon);
       break;
     }
     case LOGOUT: {
-      auto logout = codec::fix::Heartbeat::create(message);
+      auto logout = roq::fix::codec::Heartbeat::create(message);
       dispatch(event, logout);
       break;
     }
     case HEARTBEAT: {
-      auto heartbeat = codec::fix::Heartbeat::create(message);
+      auto heartbeat = roq::fix::codec::Heartbeat::create(message);
       dispatch(event, heartbeat);
       break;
     }
     case TEST_REQUEST: {
-      auto test_request = codec::fix::TestRequest::create(message);
+      auto test_request = roq::fix::codec::TestRequest::create(message);
       dispatch(event, test_request);
       break;
     }
       // business
     case BUSINESS_MESSAGE_REJECT: {
-      auto business_message_reject = codec::fix::BusinessMessageReject::create(message);
+      auto business_message_reject = roq::fix::codec::BusinessMessageReject::create(message);
       dispatch(event, business_message_reject);
       break;
     }
       // user
     case USER_RESPONSE: {
-      auto user_response = codec::fix::UserResponse::create(message);
+      auto user_response = roq::fix::codec::UserResponse::create(message);
       dispatch(event, user_response);
       break;
     }
       // security
     case SECURITY_LIST: {
-      auto security_list = codec::fix::SecurityList::create(message, decode_buffer_);
+      auto security_list = roq::fix::codec::SecurityList::create(message, decode_buffer_);
       dispatch(event, security_list);
       break;
     }
     case SECURITY_DEFINITION: {
-      auto security_definition = codec::fix::SecurityDefinition::create(message, decode_buffer_);
+      auto security_definition = roq::fix::codec::SecurityDefinition::create(message, decode_buffer_);
       dispatch(event, security_definition);
       break;
     }
     case SECURITY_STATUS: {
-      auto security_status = codec::fix::SecurityStatus::create(message, decode_buffer_);
+      auto security_status = roq::fix::codec::SecurityStatus::create(message, decode_buffer_);
       dispatch(event, security_status);
       break;
     }
       // market data
     case MARKET_DATA_REQUEST_REJECT: {
-      auto market_data_request_reject = codec::fix::MarketDataRequestReject::create(message, decode_buffer_);
+      auto market_data_request_reject = roq::fix::codec::MarketDataRequestReject::create(message, decode_buffer_);
       dispatch(event, market_data_request_reject);
       break;
     }
     case MARKET_DATA_SNAPSHOT_FULL_REFRESH: {
-      auto market_data_snapshot_full_refresh = codec::fix::MarketDataSnapshotFullRefresh::create(message, decode_buffer_);
+      auto market_data_snapshot_full_refresh = roq::fix::codec::MarketDataSnapshotFullRefresh::create(message, decode_buffer_);
       dispatch(event, market_data_snapshot_full_refresh);
       break;
     }
     case MARKET_DATA_INCREMENTAL_REFRESH: {
-      auto market_data_incremental_refresh = codec::fix::MarketDataIncrementalRefresh::create(message, decode_buffer_);
+      auto market_data_incremental_refresh = roq::fix::codec::MarketDataIncrementalRefresh::create(message, decode_buffer_);
       dispatch(event, market_data_incremental_refresh);
       break;
     }
       // orders
     case ORDER_CANCEL_REJECT: {
-      auto order_cancel_reject = codec::fix::OrderCancelReject::create(message, decode_buffer_);
+      auto order_cancel_reject = roq::fix::codec::OrderCancelReject::create(message, decode_buffer_);
       dispatch(event, order_cancel_reject);
       break;
     }
     case ORDER_MASS_CANCEL_REPORT: {
-      auto order_mass_cancel_report = codec::fix::OrderMassCancelReport::create(message, decode_buffer_);
+      auto order_mass_cancel_report = roq::fix::codec::OrderMassCancelReport::create(message, decode_buffer_);
       dispatch(event, order_mass_cancel_report);
       break;
     }
     case EXECUTION_REPORT: {
-      auto execution_report = codec::fix::ExecutionReport::create(message, decode_buffer_);
+      auto execution_report = roq::fix::codec::ExecutionReport::create(message, decode_buffer_);
       dispatch(event, execution_report);
       break;
     }
       // positions
     case REQUEST_FOR_POSITIONS_ACK: {
-      auto request_for_positions_ack = codec::fix::RequestForPositionsAck::create(message, decode_buffer_);
+      auto request_for_positions_ack = roq::fix::codec::RequestForPositionsAck::create(message, decode_buffer_);
       dispatch(event, request_for_positions_ack);
       break;
     }
     case POSITION_REPORT: {
-      auto position_report = codec::fix::PositionReport::create(message, decode_buffer_);
+      auto position_report = roq::fix::codec::PositionReport::create(message, decode_buffer_);
       dispatch(event, position_report);
       break;
     }
       // trades
     case TRADE_CAPTURE_REPORT_REQUEST_ACK: {
-      auto trade_capture_report_request_ack = codec::fix::TradeCaptureReportRequestAck::create(message, decode_buffer_);
+      auto trade_capture_report_request_ack = roq::fix::codec::TradeCaptureReportRequestAck::create(message, decode_buffer_);
       dispatch(event, trade_capture_report_request_ack);
       break;
     }
     case TRADE_CAPTURE_REPORT: {
-      auto trade_capture_report = codec::fix::TradeCaptureReport::create(message, decode_buffer_, decode_buffer_2_);
+      auto trade_capture_report = roq::fix::codec::TradeCaptureReport::create(message, decode_buffer_, decode_buffer_2_);
       dispatch(event, trade_capture_report);
       break;
     }
       // quotes
     case MASS_QUOTE_ACK: {
-      auto mass_quote_ack = codec::fix::MassQuoteAck::create(message, decode_buffer_, decode_buffer_2_);
+      auto mass_quote_ack = roq::fix::codec::MassQuoteAck::create(message, decode_buffer_, decode_buffer_2_);
       dispatch(event, mass_quote_ack);
       break;
     }
     case QUOTE_STATUS_REPORT: {
-      auto quote_status_report = codec::fix::QuoteStatusReport::create(message);
+      auto quote_status_report = roq::fix::codec::QuoteStatusReport::create(message);
       dispatch(event, quote_status_report);
       break;
     }
@@ -383,17 +383,17 @@ void Session::dispatch(Trace<roq::fix::Message> const &event, T const &value) {
   (*this)(event_2, message.header);
 }
 
-void Session::operator()(Trace<codec::fix::Reject> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::Reject> const &event, roq::fix::Header const &) {
   auto &[trace_info, reject] = event;
   log::debug("reject={}, trace_info={}"sv, reject, trace_info);
 }
 
-void Session::operator()(Trace<codec::fix::ResendRequest> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::ResendRequest> const &event, roq::fix::Header const &) {
   auto &[trace_info, resend_request] = event;
   log::debug("resend_request={}, trace_info={}"sv, resend_request, trace_info);
 }
 
-void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::Logon> const &event, roq::fix::Header const &) {
   auto &[trace_info, logon] = event;
   log::debug("logon={}, trace_info={}"sv, logon, trace_info);
   assert(state_ == State::LOGON_SENT);
@@ -403,7 +403,7 @@ void Session::operator()(Trace<codec::fix::Logon> const &event, roq::fix::Header
   (*this)(State::READY);
 }
 
-void Session::operator()(Trace<codec::fix::Logout> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::Logout> const &event, roq::fix::Header const &) {
   auto &[trace_info, logout] = event;
   log::debug("logout={}, trace_info={}"sv, logout, trace_info);
   // note! mandated, must send a logout response
@@ -412,113 +412,113 @@ void Session::operator()(Trace<codec::fix::Logout> const &event, roq::fix::Heade
   (*connection_manager_).close();
 }
 
-void Session::operator()(Trace<codec::fix::Heartbeat> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::Heartbeat> const &event, roq::fix::Header const &) {
   auto &[trace_info, heartbeat] = event;
   log::debug("heartbeat={}, trace_info={}"sv, heartbeat, trace_info);
 }
 
-void Session::operator()(Trace<codec::fix::TestRequest> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::TestRequest> const &event, roq::fix::Header const &) {
   auto &[trace_info, test_request] = event;
   send_heartbeat(test_request.test_req_id);
 }
 
-void Session::operator()(Trace<codec::fix::BusinessMessageReject> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::BusinessMessageReject> const &event, roq::fix::Header const &) {
   auto &[trace_info, business_message_reject] = event;
   log::debug("business_message_reject={}, trace_info={}"sv, business_message_reject, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityList> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::SecurityList> const &event, roq::fix::Header const &) {
   auto &[trace_info, security_list] = event;
   log::debug("security_list={}, trace_info={}"sv, security_list, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityDefinition> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::SecurityDefinition> const &event, roq::fix::Header const &) {
   auto &[trace_info, security_definition] = event;
   log::debug("security_definition={}, trace_info={}"sv, security_definition, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::SecurityStatus> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::SecurityStatus> const &event, roq::fix::Header const &) {
   auto &[trace_info, security_status] = event;
   log::debug("security_status={}, trace_info={}"sv, security_status, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataRequestReject> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataRequestReject> const &event, roq::fix::Header const &) {
   auto &[trace_info, market_data_request_reject] = event;
   log::debug("market_data_request_reject={}, trace_info={}"sv, market_data_request_reject, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataSnapshotFullRefresh> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataSnapshotFullRefresh> const &event, roq::fix::Header const &) {
   auto &[trace_info, market_data_snapshot_full_refresh] = event;
   log::debug<1>("market_data_snapshot_full_refresh={}, trace_info={}"sv, market_data_snapshot_full_refresh, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::MarketDataIncrementalRefresh> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::MarketDataIncrementalRefresh> const &event, roq::fix::Header const &) {
   auto &[trace_info, market_data_incremental_refresh] = event;
   log::debug<1>("market_data_incremental_refresh={}, trace_info={}"sv, market_data_incremental_refresh, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::UserResponse> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::UserResponse> const &event, roq::fix::Header const &) {
   auto &[trace_info, user_response] = event;
   log::debug("user_response={}, trace_info={}"sv, user_response, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderCancelReject> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::OrderCancelReject> const &event, roq::fix::Header const &) {
   auto &[trace_info, order_cancel_reject] = event;
   log::debug("order_cancel_reject={}, trace_info={}"sv, order_cancel_reject, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::OrderMassCancelReport> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::OrderMassCancelReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, order_mass_cancel_report] = event;
   log::debug("order_mass_cancel_report={}, trace_info={}"sv, order_mass_cancel_report, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::ExecutionReport> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::ExecutionReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, execution_report] = event;
   log::debug("execution_report={}, trace_info={}"sv, execution_report, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::RequestForPositionsAck> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::RequestForPositionsAck> const &event, roq::fix::Header const &) {
   auto &[trace_info, request_for_positions_ack] = event;
   log::debug("request_for_positions_ack={}, trace_info={}"sv, request_for_positions_ack, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::PositionReport> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::PositionReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, position_report] = event;
   log::debug("position_report={}, trace_info={}"sv, position_report, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReportRequestAck> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequestAck> const &event, roq::fix::Header const &) {
   auto &[trace_info, trade_capture_report_request_ack] = event;
   log::debug("trade_capture_report_request_ack={}, trace_info={}"sv, trade_capture_report_request_ack, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::TradeCaptureReport> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::TradeCaptureReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, trade_capture_report] = event;
   log::debug("trade_capture_report={}, trace_info={}"sv, trade_capture_report, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::MassQuoteAck> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::MassQuoteAck> const &event, roq::fix::Header const &) {
   auto &[trace_info, mass_quote_ack] = event;
   log::debug("mass_quote_ack={}, trace_info={}"sv, mass_quote_ack, trace_info);
   handler_(event);
 }
 
-void Session::operator()(Trace<codec::fix::QuoteStatusReport> const &event, roq::fix::Header const &) {
+void Session::operator()(Trace<roq::fix::codec::QuoteStatusReport> const &event, roq::fix::Header const &) {
   auto &[trace_info, quote_status_report] = event;
   log::debug("quote_status_report={}, trace_info={}"sv, quote_status_report, trace_info);
   handler_(event);
@@ -563,8 +563,8 @@ void Session::send_helper(T const &value) {
 }
 
 void Session::send_logon() {
-  auto heart_bt_int = static_cast<decltype(codec::fix::Logon::heart_bt_int)>(std::chrono::duration_cast<std::chrono::seconds>(ping_freq_).count());
-  auto logon = codec::fix::Logon{
+  auto heart_bt_int = static_cast<decltype(roq::fix::codec::Logon::heart_bt_int)>(std::chrono::duration_cast<std::chrono::seconds>(ping_freq_).count());
+  auto logon = roq::fix::codec::Logon{
       .encrypt_method = roq::fix::EncryptMethod::NONE,
       .heart_bt_int = heart_bt_int,
       .raw_data_length = {},
@@ -578,14 +578,14 @@ void Session::send_logon() {
 }
 
 void Session::send_logout(std::string_view const &text) {
-  auto logout = codec::fix::Logout{
+  auto logout = roq::fix::codec::Logout{
       .text = text,
   };
   send(logout);
 }
 
 void Session::send_heartbeat(std::string_view const &test_req_id) {
-  auto heartbeat = codec::fix::Heartbeat{
+  auto heartbeat = roq::fix::codec::Heartbeat{
       .test_req_id = test_req_id,
   };
   send(heartbeat);
@@ -593,7 +593,7 @@ void Session::send_heartbeat(std::string_view const &test_req_id) {
 
 void Session::send_test_request(std::chrono::nanoseconds now) {
   auto test_req_id = fmt::format("{}"sv, now.count());
-  auto test_request = codec::fix::TestRequest{
+  auto test_request = roq::fix::codec::TestRequest{
       .test_req_id = test_req_id,
   };
   send(test_request);
