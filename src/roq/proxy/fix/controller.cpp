@@ -130,11 +130,11 @@ Controller::Controller(Settings const &settings, Config const &config, io::Conte
 
 void Controller::run() {
   log::info("Event loop is now running"sv);
-  auto start = Start{};
+  Start start;
   dispatch(start);
   (*timer_).resume();
   context_.dispatch();
-  auto stop = Stop{};
+  Stop stop;
   dispatch(stop);
   log::info("Event loop has terminated"sv);
 }
@@ -1673,7 +1673,7 @@ void Controller::operator()(Trace<roq::fix::codec::QuoteCancel> const &, [[maybe
 
 template <typename... Args>
 void Controller::dispatch(Args &&...args) {
-  auto message_info = MessageInfo{};
+  MessageInfo message_info;
   Event event{message_info, std::forward<Args>(args)...};
   if (static_cast<bool>(auth_session_))
     (*auth_session_)(event);
