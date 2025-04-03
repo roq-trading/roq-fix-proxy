@@ -39,7 +39,7 @@ void Listener::operator()(io::net::tcp::Connection::Factory &factory) {
    protected:
     std::unique_ptr<Session> create(Session::Handler &handler, uint64_t session_id, Shared &shared) override {
       log::info("Connected (session_id={})"sv, session_id);
-      return std::make_unique<Session>(handler, session_id, factory_, shared);
+      return std::make_unique<Session>(handler, factory_, shared, session_id);
     }
 
    private:
@@ -55,7 +55,7 @@ void Listener::operator()(io::net::tcp::Connection::Factory &factory, io::Networ
    protected:
     std::unique_ptr<Session> create(Session::Handler &handler, uint64_t session_id, Shared &shared) override {
       log::info("Connected (session_id={}, peer={})"sv, session_id, network_address_.to_string_2());
-      return std::make_unique<Session>(handler, session_id, factory_, shared);
+      return std::make_unique<Session>(handler, factory_, shared, session_id);
     }
 
    private:

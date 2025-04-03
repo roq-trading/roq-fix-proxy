@@ -54,11 +54,6 @@ auto const ERROR_INVALID_LOGON_RESET_SEQ_NUM_FLAG = "INVALID_LOGON_RESET_SEQ_NUM
 // === HELPERS ===
 
 namespace {
-auto create_logon_timeout(auto &settings) {
-  auto now = clock::get_system();
-  return now + settings.client.logon_timeout;
-}
-
 auto validate_req_id(auto &req_id) {
   static auto const web_safe = true;
   return utils::codec::Base64::is_valid(req_id, web_safe);
@@ -67,8 +62,8 @@ auto validate_req_id(auto &req_id) {
 
 // === IMPLEMENTATION ===
 
-Session::Session(Handler &handler, uint64_t session_id, io::net::tcp::Connection::Factory &factory, Shared &shared)
-    : handler_{handler}, session_id_{session_id}, connection_{factory.create(*this)}, shared_{shared}, logon_timeout_{create_logon_timeout(shared_.settings)},
+Session::Session(Handler &handler, io::net::tcp::Connection::Factory &factory, Shared &shared, uint64_t session_id)
+    : handler_{handler}, connection_{factory.create(*this)}, shared_{shared}, session_id_{session_id}, last_update_{clock::get_system()},
       decode_buffer_(shared.settings.client.decode_buffer_size), decode_buffer_2_(shared.settings.client.decode_buffer_size) {
 }
 
@@ -79,7 +74,7 @@ void Session::operator()(Event<Timer> const &event) {
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
-      if (logon_timeout_ < event.value.now) {
+      if ((last_update_ + shared_.settings.client.logon_timeout) < event.value.now) {
         log::warn("Closing connection (reason: client did not send a logon message)"sv);
         close();
       }
@@ -95,8 +90,8 @@ void Session::operator()(Event<Timer> const &event) {
       break;
     }
     case READY:
-      if (next_heartbeat_ < event.value.now) {
-        next_heartbeat_ = event.value.now + shared_.settings.client.heartbeat_freq;
+      if ((last_update_ + shared_.settings.client.heartbeat_freq) < event.value.now) {
+        last_update_ = event.value.now;
         if (waiting_for_heartbeat_) {
           log::warn("Closing connection (reason: client did not send heartbeat)"sv);
           auto logout = roq::fix::codec::Logout{
@@ -198,93 +193,63 @@ void Session::operator()(Trace<roq::fix::codec::UserResponse> const &event) {
 }
 
 void Session::operator()(Trace<roq::fix::codec::SecurityList> const &event) {
-  auto &[trace_info, security_list] = event;
-  if (ready())
-    send<2>(security_list);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::SecurityDefinition> const &event) {
-  auto &[trace_info, security_definition] = event;
-  if (ready())
-    send<2>(security_definition);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::SecurityStatus> const &event) {
-  auto &[trace_info, security_status] = event;
-  if (ready())
-    send<2>(security_status);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::MarketDataRequestReject> const &event) {
-  auto &[trace_info, market_data_request_reject] = event;
-  if (ready())
-    send<2>(market_data_request_reject);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::MarketDataSnapshotFullRefresh> const &event) {
-  auto &[trace_info, market_data_snapshot_full_refresh] = event;
-  if (ready())
-    send<2>(market_data_snapshot_full_refresh);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::MarketDataIncrementalRefresh> const &event) {
-  auto &[trace_info, market_data_incremental_refresh] = event;
-  if (ready())
-    send<2>(market_data_incremental_refresh);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::OrderCancelReject> const &event) {
-  auto &[trace_info, order_cancel_reject] = event;
-  if (ready())
-    send<2>(order_cancel_reject);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::OrderMassCancelReport> const &event) {
-  auto &[trace_info, order_mass_cancel_report] = event;
-  if (ready())
-    send<2>(order_mass_cancel_report);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::ExecutionReport> const &event) {
-  auto &[trace_info, execution_report] = event;
-  if (ready())
-    send<2>(execution_report);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::RequestForPositionsAck> const &event) {
-  auto &[trace_info, request_for_positions_ack] = event;
-  if (ready())
-    send<2>(request_for_positions_ack);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::PositionReport> const &event) {
-  auto &[trace_info, position_report] = event;
-  if (ready())
-    send<2>(position_report);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequestAck> const &event) {
-  auto &[trace_info, trade_capture_report_request_ack] = event;
-  if (ready())
-    send<2>(trade_capture_report_request_ack);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::TradeCaptureReport> const &event) {
-  auto &[trace_info, trade_capture_report] = event;
-  if (ready())
-    send<2>(trade_capture_report);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::MassQuoteAck> const &event) {
-  auto &[trace_info, mass_quote_ack] = event;
-  if (ready())
-    send<2>(mass_quote_ack);
+  send_helper<2>(event);
 }
 
 void Session::operator()(Trace<roq::fix::codec::QuoteStatusReport> const &event) {
-  auto &[trace_info, quote_status_report] = event;
-  if (ready())
-    send<2>(quote_status_report);
+  send_helper<2>(event);
 }
 
 void Session::operator()(State state) {
@@ -330,7 +295,7 @@ void Session::operator()(io::net::tcp::Connection::Read const &) {
   auto buffer = buffer_.data();
   try {
     size_t total_bytes = 0;
-    auto parser = [&](auto &message) {
+    auto helper = [&](auto &message) {
       TraceInfo trace_info;
       check(message.header);
       Trace event{trace_info, message};
@@ -340,7 +305,7 @@ void Session::operator()(io::net::tcp::Connection::Read const &) {
       // note! here we could log the raw binary message
     };
     while (!std::empty(buffer)) {
-      auto bytes = roq::fix::Reader<FIX_VERSION>::dispatch(buffer, parser, logger);
+      auto bytes = roq::fix::Reader<FIX_VERSION>::dispatch(buffer, helper, logger);
       if (bytes == 0)
         break;
       if (shared_.settings.test.fix_debug) {
@@ -397,6 +362,12 @@ void Session::make_zombie() {
 }
 
 template <std::size_t level, typename T>
+void Session::send_helper(Trace<T> const &event) {
+  if (ready())
+    send<level>(event.value);
+}
+
+template <std::size_t level, typename T>
 void Session::send_and_close(T const &event) {
   assert(state_ != State::ZOMBIE);
   auto sending_time = clock::get_realtime();
@@ -431,10 +402,11 @@ void Session::send(T const &event, std::chrono::nanoseconds sending_time) {
       .msg_seq_num = ++outbound_.msg_seq_num,  // note!
       .sending_time = sending_time,
   };
-  if ((*connection_).send([&](auto &buffer) {
-        auto message = event.encode(header, buffer);
-        return std::size(message);
-      })) {
+  auto helper = [&](auto &buffer) {
+    auto message = event.encode(header, buffer);
+    return std::size(message);
+  };
+  if ((*connection_).send(helper)) {
   } else {
     log::warn("HERE"sv);
   }
@@ -465,7 +437,7 @@ void Session::check(roq::fix::Header const &header) {
 
 void Session::parse(Trace<roq::fix::Message> const &event) {
   auto &[trace_info, message] = event;
-  if (std::empty(comp_id_))
+  if (std::empty(comp_id_)) [[unlikely]]
     comp_id_ = message.header.sender_comp_id;
   switch (message.header.msg_type) {
     using enum roq::fix::MsgType;
@@ -543,7 +515,7 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
       log::warn("Unexpected: msg_type={}"sv, message.header.msg_type);
       send_business_message_reject(
           message.header,
-          std::string_view{},  // XXX the message could contain a ref_id field, but we don't know what we don't know...
+          {},  // XXX the message could contain a ref_id field, but we don't know what we don't know...
           roq::fix::BusinessRejectReason::UNSUPPORTED_MESSAGE_TYPE,
           ERROR_UNEXPECTED_MSG_TYPE);
       break;

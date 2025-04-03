@@ -90,7 +90,7 @@ struct Session final : public io::net::tcp::Connection::Handler {
     virtual void operator()(Trace<roq::fix::codec::QuoteCancel> const &, uint64_t session_id) = 0;
   };
 
-  Session(Handler &, uint64_t session_id, io::net::tcp::Connection::Factory &, Shared &);
+  Session(Handler &, io::net::tcp::Connection::Factory &, Shared &, uint64_t session_id);
 
   bool ready() const;
 
@@ -150,6 +150,8 @@ struct Session final : public io::net::tcp::Connection::Handler {
 
   // - send
   template <std::size_t level, typename T>
+  void send_helper(Trace<T> const &);
+  template <std::size_t level, typename T>
   void send_and_close(T const &);
   template <std::size_t level, typename T>
   void send(T const &);
@@ -202,12 +204,11 @@ struct Session final : public io::net::tcp::Connection::Handler {
 
  private:
   Handler &handler_;
-  uint64_t const session_id_;
-  std::unique_ptr<io::net::tcp::Connection> connection_;
+  std::unique_ptr<io::net::tcp::Connection> const connection_;
   Shared &shared_;
-  io::Buffer buffer_;
-  std::chrono::nanoseconds const logon_timeout_;
+  uint64_t const session_id_;
   State state_ = {};
+  std::chrono::nanoseconds last_update_ = {};
   struct {
     uint64_t msg_seq_num = {};
   } outbound_;
@@ -216,13 +217,13 @@ struct Session final : public io::net::tcp::Connection::Handler {
   } inbound_;
   std::string comp_id_;
   std::string username_;
-  std::chrono::nanoseconds user_response_timeout_ = {};
+  std::chrono::nanoseconds user_response_timeout_ = {};  // XXX FIXME TODO merge with last_update_
   std::string party_id_;
-  std::chrono::nanoseconds next_heartbeat_ = {};
   bool waiting_for_heartbeat_ = {};
   // buffer
+  io::Buffer buffer_;
   std::vector<std::byte> decode_buffer_;
-  std::vector<std::byte> decode_buffer_2_;
+  std::vector<std::byte> decode_buffer_2_;  // note! nested
 };
 
 }  // namespace client
