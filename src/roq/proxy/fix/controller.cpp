@@ -14,7 +14,7 @@
 #include "roq/utils/common.hpp"
 #include "roq/utils/update.hpp"
 
-#include "roq/fix/utils.hpp"
+#include "roq/fix/map.hpp"
 
 #include "roq/logging.hpp"
 
@@ -101,8 +101,7 @@ auto get_client_cl_ord_id(auto &cl_ord_id) -> std::string_view {
 }
 
 auto is_order_complete(auto ord_status) {
-  auto order_status = roq::fix::map(ord_status);
-  return roq::utils::is_order_complete(order_status);
+  return roq::utils::is_order_complete(map(ord_status));
 }
 
 auto is_pending(auto exec_type) {
