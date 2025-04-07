@@ -32,23 +32,6 @@ namespace client {
 
 namespace {
 auto const FIX_VERSION = roq::fix::Version::FIX_44;
-
-auto const ERROR_GOODBYE = "goodbye"sv;
-auto const ERROR_MISSING_HEARTBEAT = "MISSING HEARTBEAT"sv;
-auto const ERROR_NO_LOGON = "NO LOGON"sv;
-auto const ERROR_UNEXPECTED_LOGON = "UNEXPECTED LOGON"sv;
-auto const ERROR_UNEXPECTED_MSG_TYPE = "UNEXPECTED MSG_TYPE"sv;
-auto const ERROR_UNKNOWN_TARGET_COMP_ID = "UNKNOWN TARGET_COMP_ID"sv;
-auto const ERROR_UNSUPPORTED_MSG_TYPE = "UNSUPPORTED MSG_TYPE"sv;
-auto const ERROR_UNSUPPORTED_PARTY_IDS = "UNSUPPORTED PARTY_IDS"sv;
-auto const ERROR_USER_RESPONSE_TIMEOUT = "USER_RESPONSE_TIMEOUT"sv;
-auto const ERROR_INVALID_REQ_ID = "INVALID_REQ_ID"sv;
-auto const ERROR_INVALID_MD_REQ_ID = "INVALID_MD_REQ_ID"sv;
-auto const ERROR_INVALID_CL_ORD_ID = "INVALID_CL_ORD_ID"sv;
-auto const ERROR_INVALID_ORIG_CL_ORD_ID = "INVALID_ORIG_CL_ORD_ID"sv;
-auto const ERROR_INVALID_LOGON_ENCRYPT_METHOD = "INVALID_LOGON_ENCRYPT_METHOD"sv;
-auto const ERROR_INVALID_LOGON_HEART_BT_INT = "INVALID_LOGON_HEART_BT_INT"sv;
-auto const ERROR_INVALID_LOGON_RESET_SEQ_NUM_FLAG = "INVALID_LOGON_RESET_SEQ_NUM_FLAG"sv;
 }  // namespace
 
 // === HELPERS ===
@@ -82,8 +65,9 @@ void Session::operator()(Event<Timer> const &event) {
     case WAITING_CREATE_ROUTE: {
       assert(user_response_timeout_.count());
       if (user_response_timeout_ < event.value.now) {
+        auto const error = roq::fix::codec::Error::USER_RESPONSE_TIMEOUT;
         auto logout = roq::fix::codec::Logout{
-            .text = ERROR_USER_RESPONSE_TIMEOUT,
+            .text = magic_enum::enum_name(error),
         };
         send_and_close<2>(logout);
       }
@@ -94,8 +78,9 @@ void Session::operator()(Event<Timer> const &event) {
         last_update_ = event.value.now;
         if (waiting_for_heartbeat_) {
           log::warn("Closing connection (reason: client did not send heartbeat)"sv);
+          auto const error = roq::fix::codec::Error::MISSING_HEARTBEAT;
           auto logout = roq::fix::codec::Logout{
-              .text = ERROR_MISSING_HEARTBEAT,
+              .text = magic_enum::enum_name(error),
           };
           send_and_close<2>(logout);
         } else {
@@ -111,8 +96,9 @@ void Session::operator()(Event<Timer> const &event) {
     case WAITING_REMOVE_ROUTE: {
       assert(user_response_timeout_.count());
       if (user_response_timeout_ < event.value.now) {
+        auto const error = roq::fix::codec::Error::USER_RESPONSE_TIMEOUT;
         auto logout = roq::fix::codec::Logout{
-            .text = ERROR_USER_RESPONSE_TIMEOUT,
+            .text = magic_enum::enum_name(error),
         };
         send_and_close<2>(logout);
         // XXX HANS release route
@@ -171,8 +157,9 @@ void Session::operator()(Trace<roq::fix::codec::UserResponse> const &event) {
           auto success = [&]() {
             // username_.clear();
             // party_id_.clear();
+            auto const error = roq::fix::codec::Error::GOODBYE;
             auto response = roq::fix::codec::Logout{
-                .text = ERROR_GOODBYE,
+                .text = magic_enum::enum_name(error),
             };
             send_and_close<2>(response);
           };
@@ -517,7 +504,7 @@ void Session::parse(Trace<roq::fix::Message> const &event) {
           message.header,
           {},  // XXX the message could contain a ref_id field, but we don't know what we don't know...
           roq::fix::BusinessRejectReason::UNSUPPORTED_MESSAGE_TYPE,
-          ERROR_UNEXPECTED_MSG_TYPE);
+          roq::fix::codec::Error::UNEXPECTED_MSG_TYPE);
       break;
   };
 }
@@ -537,7 +524,7 @@ void Session::operator()(Trace<roq::fix::codec::TestRequest> const &event, roq::
   switch (state_) {
     using enum State;
     case WAITING_LOGON:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case WAITING_CREATE_ROUTE:
     case READY: {
@@ -561,10 +548,10 @@ void Session::operator()(Trace<roq::fix::codec::ResendRequest> const &event, roq
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_UNSUPPORTED_MSG_TYPE);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_MSG_TYPE);
       break;
     case WAITING_REMOVE_ROUTE:
       make_zombie();
@@ -588,7 +575,7 @@ void Session::operator()(Trace<roq::fix::codec::Heartbeat> const &event, roq::fi
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY:
       waiting_for_heartbeat_ = false;
@@ -614,13 +601,13 @@ void Session::operator()(Trace<roq::fix::codec::Logon> const &event, roq::fix::H
       // validate: target_comp_id
       if (header.target_comp_id != shared_.settings.client.comp_id) {
         log::error(R"(Unexpected target_comp_id="{}" (expected: "{}"))"sv, header.target_comp_id, shared_.settings.client.comp_id);
-        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_UNKNOWN_TARGET_COMP_ID);
+        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::UNKNOWN_TARGET_COMP_ID);
         return;  // note!
       }
       // validate: encrypt_method
       if (logon.encrypt_method != roq::fix::EncryptMethod::NONE) {
         log::error(R"(Unexpected encrypt_method={} (expected: NONE))"sv, logon.encrypt_method);
-        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_INVALID_LOGON_ENCRYPT_METHOD);
+        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::INVALID_LOGON_ENCRYPT_METHOD);
         return;  // note!
       }
       // validate: heart_bt_int
@@ -631,13 +618,13 @@ void Session::operator()(Trace<roq::fix::codec::Logon> const &event, roq::fix::H
             heart_bt_int,
             shared_.settings.client.logon_heartbeat_min,
             shared_.settings.client.logon_heartbeat_max);
-        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_INVALID_LOGON_HEART_BT_INT);
+        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::INVALID_LOGON_HEART_BT_INT);
         return;  // note!
       }
       // validate: reset_seq_num_flag
       if (!logon.reset_seq_num_flag) {
         log::error(R"(Unexpected reset_num_flag={} (expected true)))"sv, logon.reset_seq_num_flag);
-        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_INVALID_LOGON_RESET_SEQ_NUM_FLAG);
+        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::INVALID_LOGON_RESET_SEQ_NUM_FLAG);
         return;  // note!
       }
       // authenticate
@@ -659,19 +646,19 @@ void Session::operator()(Trace<roq::fix::codec::Logon> const &event, roq::fix::H
           auto now = clock::get_system();
           user_response_timeout_ = now + shared_.settings.server.request_timeout;
         } catch (NotReady &e) {
-          send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, e.what());
+          send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NOT_READY);
         }
       };
       auto failure = [&](auto &reason) {
         log::error("Invalid logon (reason: {})"sv, reason);
-        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, reason);
+        send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::INVALID_LOGON);
       };
       shared_.session_logon(session_id_, header.sender_comp_id, logon.username, logon.password, logon.raw_data, success, failure);
       break;
     }
     case WAITING_CREATE_ROUTE:
     case READY:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_UNEXPECTED_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::UNEXPECTED_LOGON);
       break;
     case WAITING_REMOVE_ROUTE:
       make_zombie();
@@ -688,7 +675,7 @@ void Session::operator()(Trace<roq::fix::codec::Logout> const &event, roq::fix::
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       assert(!std::empty(party_id_));
@@ -717,11 +704,12 @@ void Session::operator()(Trace<roq::fix::codec::Logout> const &event, roq::fix::
 
 void Session::operator()(Trace<roq::fix::codec::TradingSessionStatusRequest> const &event, roq::fix::Header const &header) {
   auto &[trace_info, trading_session_status_request] = event;
+  // XXX TODO
   send_business_message_reject(
       header,
       trading_session_status_request.trad_ses_req_id,
       roq::fix::BusinessRejectReason::UNSUPPORTED_MESSAGE_TYPE,
-      ERROR_UNEXPECTED_MSG_TYPE);  // XXX TODO
+      roq::fix::codec::Error::UNEXPECTED_MSG_TYPE);
 }
 
 void Session::operator()(Trace<roq::fix::codec::SecurityListRequest> const &event, roq::fix::Header const &header) {
@@ -729,12 +717,13 @@ void Session::operator()(Trace<roq::fix::codec::SecurityListRequest> const &even
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &security_list_request = event.value;
       if (!validate_req_id(security_list_request.security_req_id)) {
-        send_business_message_reject(header, security_list_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, security_list_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -753,12 +742,13 @@ void Session::operator()(Trace<roq::fix::codec::SecurityDefinitionRequest> const
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &security_definition_request = event.value;
       if (!validate_req_id(security_definition_request.security_req_id)) {
-        send_business_message_reject(header, security_definition_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, security_definition_request.security_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -777,12 +767,13 @@ void Session::operator()(Trace<roq::fix::codec::SecurityStatusRequest> const &ev
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &security_status_request = event.value;
       if (!validate_req_id(security_status_request.security_status_req_id)) {
-        send_business_message_reject(header, security_status_request.security_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, security_status_request.security_status_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -801,12 +792,12 @@ void Session::operator()(Trace<roq::fix::codec::MarketDataRequest> const &event,
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &market_data_request = event.value;
       if (!validate_req_id(market_data_request.md_req_id)) {
-        send_business_message_reject(header, market_data_request.md_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_MD_REQ_ID);
+        send_business_message_reject(header, market_data_request.md_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_MD_REQ_ID);
         return;
       }
       handler_(event, session_id_);
@@ -825,18 +816,20 @@ void Session::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &event
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &order_status_request = event.value;
       if (!validate_req_id(order_status_request.ord_status_req_id)) {
-        send_business_message_reject(header, order_status_request.ord_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, order_status_request.ord_status_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_status_request] = event;
-        send_business_message_reject(header, order_status_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(
+            header, order_status_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -853,17 +846,19 @@ void Session::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &e
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &order_mass_status_request = event.value;
       if (!validate_req_id(order_mass_status_request.mass_status_req_id)) {
-        send_business_message_reject(header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(
+            header, order_mass_status_request.mass_status_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -880,17 +875,17 @@ void Session::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event, ro
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &new_order_single = event.value;
       if (!validate_req_id(new_order_single.cl_ord_id)) {
-        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(header, new_order_single.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -907,23 +902,25 @@ void Session::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &event
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &order_cancel_request = event.value;
       if (!validate_req_id(order_cancel_request.cl_ord_id)) {
-        send_business_message_reject(header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_CL_ORD_ID);
         return;
       }
       if (!validate_req_id(order_cancel_request.orig_cl_ord_id)) {
-        send_business_message_reject(header, order_cancel_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_ORIG_CL_ORD_ID);
+        send_business_message_reject(
+            header, order_cancel_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_ORIG_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_cancel_request] = event;
         // XXX FIXME should be execution report
-        send_business_message_reject(header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(
+            header, order_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -940,23 +937,26 @@ void Session::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &order_cancel_replace_request = event.value;
       if (!validate_req_id(order_cancel_replace_request.cl_ord_id)) {
-        send_business_message_reject(header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(
+            header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_CL_ORD_ID);
         return;
       }
       if (!validate_req_id(order_cancel_replace_request.orig_cl_ord_id)) {
-        send_business_message_reject(header, order_cancel_replace_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_ORIG_CL_ORD_ID);
+        send_business_message_reject(
+            header, order_cancel_replace_request.orig_cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_ORIG_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, order_cancel_replace_request] = event;
         // XXX FIXME should be execution report
-        send_business_message_reject(header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(
+            header, order_cancel_replace_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -973,17 +973,19 @@ void Session::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &e
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &order_mass_cancel_request = event.value;
       if (!validate_req_id(order_mass_cancel_request.cl_ord_id)) {
-        send_business_message_reject(header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_CL_ORD_ID);
+        send_business_message_reject(
+            header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_CL_ORD_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
-        send_business_message_reject(header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_MSG_TYPE);
+        send_business_message_reject(
+            header, order_mass_cancel_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_MSG_TYPE);
       }
       break;
     }
@@ -1000,18 +1002,19 @@ void Session::operator()(Trace<roq::fix::codec::RequestForPositions> const &even
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &request_for_positions = event.value;
       if (!validate_req_id(request_for_positions.pos_req_id)) {
-        send_business_message_reject(header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, request_for_positions] = event;
-        send_business_message_reject(header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_PARTY_IDS);
+        send_business_message_reject(
+            header, request_for_positions.pos_req_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_PARTY_IDS);
       }
       break;
     }
@@ -1028,18 +1031,20 @@ void Session::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const
     using enum State;
     case WAITING_LOGON:
     case WAITING_CREATE_ROUTE:
-      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, ERROR_NO_LOGON);
+      send_reject_and_close(header, roq::fix::SessionRejectReason::OTHER, roq::fix::codec::Error::NO_LOGON);
       break;
     case READY: {
       auto &trade_capture_report_request = event.value;
       if (!validate_req_id(trade_capture_report_request.trade_request_id)) {
-        send_business_message_reject(header, trade_capture_report_request.trade_request_id, roq::fix::BusinessRejectReason::OTHER, ERROR_INVALID_REQ_ID);
+        send_business_message_reject(
+            header, trade_capture_report_request.trade_request_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::INVALID_REQ_ID);
         return;
       }
       if (add_party_ids(event, [&](auto &event_2) { handler_(event_2, session_id_); })) {
       } else {
         auto &[trace_info, trade_capture_report_request] = event;
-        send_business_message_reject(header, trade_capture_report_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, ERROR_UNSUPPORTED_MSG_TYPE);
+        send_business_message_reject(
+            header, trade_capture_report_request.cl_ord_id, roq::fix::BusinessRejectReason::OTHER, roq::fix::codec::Error::UNSUPPORTED_MSG_TYPE);
       }
       break;
     }
@@ -1061,10 +1066,10 @@ void Session::operator()(Trace<roq::fix::codec::QuoteCancel> const &, roq::fix::
 
 // helpers
 
-void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::SessionRejectReason session_reject_reason, std::string_view const &text) {
+void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::SessionRejectReason session_reject_reason, roq::fix::codec::Error error) {
   auto response = roq::fix::codec::Reject{
       .ref_seq_num = header.msg_seq_num,
-      .text = text,
+      .text = magic_enum::enum_name(error),
       .ref_tag_id = {},
       .ref_msg_type = header.msg_type,
       .session_reject_reason = session_reject_reason,
@@ -1074,13 +1079,13 @@ void Session::send_reject_and_close(roq::fix::Header const &header, roq::fix::Se
 }
 
 void Session::send_business_message_reject(
-    roq::fix::Header const &header, std::string_view const &ref_id, roq::fix::BusinessRejectReason business_reject_reason, std::string_view const &text) {
+    roq::fix::Header const &header, std::string_view const &ref_id, roq::fix::BusinessRejectReason business_reject_reason, roq::fix::codec::Error error) {
   auto response = roq::fix::codec::BusinessMessageReject{
       .ref_seq_num = header.msg_seq_num,
       .ref_msg_type = header.msg_type,                   // required
       .business_reject_ref_id = ref_id,                  // required (sometimes)
       .business_reject_reason = business_reject_reason,  // required
-      .text = text,
+      .text = magic_enum::enum_name(error),
   };
   log::warn("business_message_reject={}"sv, response);
   send<2>(response);

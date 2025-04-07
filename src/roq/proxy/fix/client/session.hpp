@@ -15,6 +15,8 @@
 
 #include "roq/io/net/tcp/connection.hpp"
 
+#include "roq/fix/codec/error.hpp"
+
 #include "roq/fix/codec/business_message_reject.hpp"
 #include "roq/fix/codec/execution_report.hpp"
 #include "roq/fix/codec/heartbeat.hpp"
@@ -195,9 +197,9 @@ struct Session final : public io::net::tcp::Connection::Handler {
   void operator()(Trace<roq::fix::codec::MassQuote> const &, roq::fix::Header const &);
   void operator()(Trace<roq::fix::codec::QuoteCancel> const &, roq::fix::Header const &);
 
-  void send_reject_and_close(roq::fix::Header const &, roq::fix::SessionRejectReason, std::string_view const &text);
+  void send_reject_and_close(roq::fix::Header const &, roq::fix::SessionRejectReason, roq::fix::codec::Error);
 
-  void send_business_message_reject(roq::fix::Header const &, std::string_view const &ref_id, roq::fix::BusinessRejectReason, std::string_view const &text);
+  void send_business_message_reject(roq::fix::Header const &, std::string_view const &ref_id, roq::fix::BusinessRejectReason, roq::fix::codec::Error);
 
   template <typename T, typename Callback>
   bool add_party_ids(Trace<T> const &, Callback) const;

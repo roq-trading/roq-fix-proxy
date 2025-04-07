@@ -16,6 +16,8 @@
 
 #include "roq/fix/map.hpp"
 
+#include "roq/fix/codec/error.hpp"
+
 #include "roq/logging.hpp"
 
 using namespace std::literals;
@@ -28,20 +30,7 @@ namespace fix {
 
 namespace {
 auto const TIMER_FREQUENCY = 100ms;
-
 auto const ORDER_ID_NONE = "NONE"sv;
-
-auto const ERROR_VALIDATION = "VALIDATION"sv;
-auto const ERROR_DUPLICATE_CL_ORD_ID = "DUPLICATE_CL_ORD_ID"sv;
-auto const ERROR_DUPLICATE_ORD_STATUS_REQ_ID = "DUPLICATE_ORD_STATUS_REQ_ID"sv;
-auto const ERROR_DUPLICATE_MASS_STATUS_REQ_ID = "DUPLICATE_MASS_STATUS_REQ_ID"sv;
-auto const ERROR_UNKNOWN_SUBSCRIPTION_REQUEST_TYPE = "UNKNOWN_SUBSCRIPTION_REQUEST_TYPE"sv;
-auto const ERROR_DUPLICATE_MD_REQ_ID = "DUPLICATE_MD_REQ_ID"sv;
-auto const ERROR_UNKNOWN_MD_REQ_ID = "UNKNOWN_MD_REQ_ID"sv;
-auto const ERROR_DUPLICATED_POS_REQ_ID = "DUPLICATED_POS_REQ_ID"sv;
-auto const ERROR_UNKNOWN_POS_REQ_ID = "UNKNOWN_POS_REQ_ID"sv;
-auto const ERROR_DUPLICATE_TRADE_REQUEST_ID = "DUPLICATE_TRADE_REQUEST_ID"sv;
-auto const ERROR_UNKNOWN_TRADE_REQUEST_ID = "UNKNOWN_TRADE_REQUEST_ID"sv;
 }  // namespace
 
 // === HELPERS ===
@@ -1086,11 +1075,11 @@ void Controller::operator()(Trace<roq::fix::codec::SecurityStatusRequest> const 
 void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &event, uint64_t session_id) {
   auto market_data_request = event.value;
   auto req_id = market_data_request.md_req_id;
-  auto reject = [&](auto md_req_rej_reason, auto &text) {
+  auto reject = [&](auto md_req_rej_reason, auto error) {
     auto market_data_request_reject = roq::fix::codec::MarketDataRequestReject{
         .md_req_id = req_id,
         .md_req_rej_reason = md_req_rej_reason,
-        .text = text,
+        .text = magic_enum::enum_name(error),
     };
     Trace event_2{event.trace_info, market_data_request_reject};
     dispatch_to_client(event_2, session_id);
@@ -1098,7 +1087,7 @@ void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &eve
   if (!market_data_request.is_valid()) {
     reject(
         roq::fix::MDReqRejReason::UNSUPPORTED_SCOPE,  // XXX FIXME what to use ???
-        ERROR_VALIDATION);
+        roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto &mapping = subscriptions_.md_req_id;
@@ -1127,18 +1116,18 @@ void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &eve
     using enum roq::fix::SubscriptionRequestType;
     case UNDEFINED:
     case UNKNOWN:
-      reject(roq::fix::MDReqRejReason::UNSUPPORTED_SUBSCRIPTION_REQUEST_TYPE, ERROR_UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
+      reject(roq::fix::MDReqRejReason::UNSUPPORTED_SUBSCRIPTION_REQUEST_TYPE, roq::fix::codec::Error::UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
       break;
     case SNAPSHOT:
       if (exists) {
-        reject(roq::fix::MDReqRejReason::DUPLICATE_MD_REQ_ID, ERROR_DUPLICATE_MD_REQ_ID);
+        reject(roq::fix::MDReqRejReason::DUPLICATE_MD_REQ_ID, roq::fix::codec::Error::DUPLICATE_MD_REQ_ID);
       } else {
         dispatch(false);
       }
       break;
     case SNAPSHOT_UPDATES:
       if (exists) {
-        reject(roq::fix::MDReqRejReason::DUPLICATE_MD_REQ_ID, ERROR_DUPLICATE_MD_REQ_ID);
+        reject(roq::fix::MDReqRejReason::DUPLICATE_MD_REQ_ID, roq::fix::codec::Error::DUPLICATE_MD_REQ_ID);
       } else {
         dispatch(true);
       }
@@ -1149,7 +1138,7 @@ void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &eve
       } else {
         reject(
             roq::fix::MDReqRejReason::UNSUPPORTED_SUBSCRIPTION_REQUEST_TYPE,  // XXX FIXME what to use ???
-            ERROR_UNKNOWN_MD_REQ_ID);
+            roq::fix::codec::Error::UNKNOWN_MD_REQ_ID);
       }
       break;
   }
@@ -1157,7 +1146,7 @@ void Controller::operator()(Trace<roq::fix::codec::MarketDataRequest> const &eve
 
 void Controller::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &event, uint64_t session_id) {
   auto &order_status_request = event.value;
-  auto reject = [&](auto ord_rej_reason, auto &text) {
+  auto reject = [&](auto ord_rej_reason, auto error) {
     auto request_id = shared_.create_request_id();
     auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
@@ -1194,14 +1183,14 @@ void Controller::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &ev
         .transact_time = {},
         .position_effect = {},
         .max_show = {},
-        .text = text,
+        .text = magic_enum::enum_name(error),
         .last_liquidity_ind = {},
     };
     Trace event_2{event.trace_info, execution_report};
     dispatch_to_client(event_2, session_id);
   };
   if (!order_status_request.is_valid()) {
-    reject(roq::fix::OrdRejReason::OTHER, ERROR_VALIDATION);
+    reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = order_status_request.ord_status_req_id;
@@ -1210,7 +1199,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &ev
   if (!std::empty(req_id)) {  // note! optional
     auto iter = client_to_server.find(req_id);
     if (iter != std::end(client_to_server)) {
-      reject(roq::fix::OrdRejReason::OTHER, ERROR_DUPLICATE_ORD_STATUS_REQ_ID);
+      reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::DUPLICATE_ORD_STATUS_REQ_ID);
       return;
     }
   }
@@ -1230,8 +1219,8 @@ void Controller::operator()(Trace<roq::fix::codec::OrderStatusRequest> const &ev
 
 void Controller::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event, uint64_t session_id) {
   auto &new_order_single = event.value;
-  auto reject = [&](auto ord_rej_reason, auto &text) {
-    log::warn(R"(DEBUG: REJECT ord_rej_reason={}, text="{}")"sv, ord_rej_reason, text);
+  auto reject = [&](auto ord_rej_reason, auto error) {
+    log::warn(R"(DEBUG: REJECT ord_rej_reason={}, error={})"sv, ord_rej_reason, error);
     auto request_id = shared_.create_request_id();
     auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
@@ -1268,14 +1257,14 @@ void Controller::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event,
         .transact_time = {},
         .position_effect = {},
         .max_show = {},
-        .text = text,
+        .text = magic_enum::enum_name(error),
         .last_liquidity_ind = {},
     };
     Trace event_2{event.trace_info, execution_report};
     dispatch_to_client(event_2, session_id);
   };
   if (!new_order_single.is_valid()) {
-    reject(roq::fix::OrdRejReason::OTHER, ERROR_VALIDATION);
+    reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = new_order_single.cl_ord_id;
@@ -1284,7 +1273,7 @@ void Controller::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event,
   auto client_id = get_client_from_parties(new_order_single);
   auto iter = client_to_server.find(req_id);
   if (iter != std::end(client_to_server)) {
-    reject(roq::fix::OrdRejReason::OTHER, ERROR_DUPLICATE_CL_ORD_ID);
+    reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::DUPLICATE_CL_ORD_ID);
     return;
   }
   auto request_id = create_request_id(client_id, new_order_single.cl_ord_id);
@@ -1298,8 +1287,8 @@ void Controller::operator()(Trace<roq::fix::codec::NewOrderSingle> const &event,
 
 void Controller::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> const &event, uint64_t session_id) {
   auto &order_cancel_replace_request = event.value;
-  auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
-    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
+  auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto error) {
+    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, error={})"sv, order_id, ord_status, cxl_rej_reason, error);
     auto order_cancel_reject = roq::fix::codec::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
@@ -1310,13 +1299,13 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> co
         .account = order_cancel_replace_request.account,
         .cxl_rej_response_to = roq::fix::CxlRejResponseTo::ORDER_CANCEL_REPLACE_REQUEST,  // required
         .cxl_rej_reason = cxl_rej_reason,
-        .text = text,
+        .text = magic_enum::enum_name(error),
     };
     Trace event_2{event.trace_info, order_cancel_reject};
     dispatch_to_client(event_2, session_id);
   };
   if (!order_cancel_replace_request.is_valid()) {
-    reject(ORDER_ID_NONE, roq::fix::OrdStatus::REJECTED, roq::fix::CxlRejReason::OTHER, ERROR_VALIDATION);
+    reject(ORDER_ID_NONE, roq::fix::OrdStatus::REJECTED, roq::fix::CxlRejReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = order_cancel_replace_request.cl_ord_id;
@@ -1329,7 +1318,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> co
         ORDER_ID_NONE,
         roq::fix::OrdStatus::REJECTED,  // XXX FIXME should be latest "known"
         roq::fix::CxlRejReason::DUPLICATE_CL_ORD_ID,
-        ERROR_DUPLICATE_CL_ORD_ID);
+        roq::fix::codec::Error::DUPLICATE_CL_ORD_ID);
     return;
   }
   auto request_id = create_request_id(client_id, req_id);
@@ -1346,8 +1335,8 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelReplaceRequest> co
 
 void Controller::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &event, uint64_t session_id) {
   auto &order_cancel_request = event.value;
-  auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto &text) {
-    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, text="{}")"sv, order_id, ord_status, cxl_rej_reason, text);
+  auto reject = [&](auto &order_id, auto ord_status, auto cxl_rej_reason, auto error) {
+    log::warn(R"(DEBUG: REJECT order_id="{}", ord_status={}, cxl_rej_reason={}, error={})"sv, order_id, ord_status, cxl_rej_reason, error);
     auto order_cancel_reject = roq::fix::codec::OrderCancelReject{
         .order_id = order_id,  // required
         .secondary_cl_ord_id = {},
@@ -1358,13 +1347,13 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &ev
         .account = order_cancel_request.account,
         .cxl_rej_response_to = roq::fix::CxlRejResponseTo::ORDER_CANCEL_REQUEST,  // required
         .cxl_rej_reason = cxl_rej_reason,
-        .text = text,
+        .text = magic_enum::enum_name(error),
     };
     Trace event_2{event.trace_info, order_cancel_reject};
     dispatch_to_client(event_2, session_id);
   };
   if (!order_cancel_request.is_valid()) {
-    reject(ORDER_ID_NONE, roq::fix::OrdStatus::REJECTED, roq::fix::CxlRejReason::OTHER, ERROR_VALIDATION);
+    reject(ORDER_ID_NONE, roq::fix::OrdStatus::REJECTED, roq::fix::CxlRejReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = order_cancel_request.cl_ord_id;
@@ -1377,7 +1366,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &ev
         ORDER_ID_NONE,
         roq::fix::OrdStatus::REJECTED,  // XXX FIXME should be latest "known"
         roq::fix::CxlRejReason::DUPLICATE_CL_ORD_ID,
-        ERROR_DUPLICATE_ORD_STATUS_REQ_ID);
+        roq::fix::codec::Error::DUPLICATE_ORD_STATUS_REQ_ID);
     return;
   }
   auto request_id = create_request_id(client_id, order_cancel_request.cl_ord_id);
@@ -1394,7 +1383,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderCancelRequest> const &ev
 
 void Controller::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const &event, uint64_t session_id) {
   auto &order_mass_status_request = event.value;
-  auto reject = [&](auto ord_rej_reason, auto &text) {
+  auto reject = [&](auto ord_rej_reason, auto error) {
     auto request_id = shared_.create_request_id();
     auto execution_report = roq::fix::codec::ExecutionReport{
         .order_id = request_id,  // required
@@ -1431,14 +1420,14 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const
         .transact_time = {},
         .position_effect = {},
         .max_show = {},
-        .text = text,
+        .text = magic_enum::enum_name(error),
         .last_liquidity_ind = {},
     };
     Trace event_2{event.trace_info, execution_report};
     dispatch_to_client(event_2, session_id);
   };
   if (!order_mass_status_request.is_valid()) {
-    reject(roq::fix::OrdRejReason::OTHER, ERROR_VALIDATION);
+    reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = order_mass_status_request.mass_status_req_id;
@@ -1446,7 +1435,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const
   auto &client_to_server = mapping.client_to_server[session_id];
   auto iter = client_to_server.find(req_id);
   if (iter != std::end(client_to_server)) {
-    reject(roq::fix::OrdRejReason::OTHER, ERROR_DUPLICATE_MASS_STATUS_REQ_ID);
+    reject(roq::fix::OrdRejReason::OTHER, roq::fix::codec::Error::DUPLICATE_MASS_STATUS_REQ_ID);
     return;
   }
   auto client_id = get_client_from_parties(order_mass_status_request);
@@ -1462,7 +1451,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassStatusRequest> const
 
 void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const &event, uint64_t session_id) {
   auto &order_mass_cancel_request = event.value;
-  auto reject = [&](auto order_mass_reject_reason, auto &text) {
+  auto reject = [&](auto order_mass_reject_reason, auto error) {
     auto order_mass_cancel_report = roq::fix::codec::OrderMassCancelReport{
         .cl_ord_id = order_mass_cancel_request.cl_ord_id,
         .order_id = order_mass_cancel_request.cl_ord_id,                                 // required
@@ -1473,14 +1462,14 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const
         .symbol = order_mass_cancel_request.symbol,
         .security_exchange = order_mass_cancel_request.security_exchange,
         .side = order_mass_cancel_request.side,
-        .text = text,
+        .text = magic_enum::enum_name(error),
         .no_party_ids = order_mass_cancel_request.no_party_ids,
     };
     Trace event_2{event.trace_info, order_mass_cancel_report};
     dispatch_to_client(event_2, session_id);
   };
   if (!order_mass_cancel_request.is_valid()) {
-    reject(roq::fix::MassCancelRejectReason::OTHER, ERROR_VALIDATION);
+    reject(roq::fix::MassCancelRejectReason::OTHER, roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto req_id = order_mass_cancel_request.cl_ord_id;
@@ -1488,7 +1477,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const
   auto &client_to_server = mapping.client_to_server[session_id];
   auto iter = client_to_server.find(req_id);
   if (iter != std::end(client_to_server)) {
-    reject(roq::fix::MassCancelRejectReason::OTHER, ERROR_DUPLICATE_CL_ORD_ID);
+    reject(roq::fix::MassCancelRejectReason::OTHER, roq::fix::codec::Error::DUPLICATE_CL_ORD_ID);
     return;
   }
   auto client_id = get_client_from_parties(order_mass_cancel_request);
@@ -1505,7 +1494,7 @@ void Controller::operator()(Trace<roq::fix::codec::OrderMassCancelRequest> const
 void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &event, uint64_t session_id) {
   auto &request_for_positions = event.value;
   auto req_id = request_for_positions.pos_req_id;
-  auto reject = [&](auto &text) {
+  auto reject = [&](auto error) {
     auto request_id = shared_.create_request_id();
     auto request_for_positions_ack = roq::fix::codec::RequestForPositionsAck{
         .pos_maint_rpt_id = request_id,  // required
@@ -1517,13 +1506,13 @@ void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &e
         .no_party_ids = request_for_positions.no_party_ids,                // required
         .account = request_for_positions.account,                          // required
         .account_type = request_for_positions.account_type,                // required
-        .text = text,
+        .text = magic_enum::enum_name(error),
     };
     Trace event_2{event.trace_info, request_for_positions_ack};
     dispatch_to_client(event_2, session_id);
   };
   if (!request_for_positions.is_valid()) {
-    reject(ERROR_VALIDATION);
+    reject(roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto &mapping = subscriptions_.pos_req_id;
@@ -1559,18 +1548,18 @@ void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &e
     using enum roq::fix::SubscriptionRequestType;
     case UNDEFINED:
     case UNKNOWN:
-      reject(ERROR_UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
+      reject(roq::fix::codec::Error::UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
       break;
     case SNAPSHOT:
       if (exists) {
-        reject(ERROR_DUPLICATED_POS_REQ_ID);
+        reject(roq::fix::codec::Error::DUPLICATED_POS_REQ_ID);
       } else {
         dispatch(false);
       }
       break;
     case SNAPSHOT_UPDATES:
       if (exists) {
-        reject(ERROR_DUPLICATED_POS_REQ_ID);
+        reject(roq::fix::codec::Error::DUPLICATED_POS_REQ_ID);
       } else {
         dispatch(true);
       }
@@ -1579,7 +1568,7 @@ void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &e
       if (exists) {
         dispatch(false);
       } else {
-        reject(ERROR_UNKNOWN_POS_REQ_ID);
+        reject(roq::fix::codec::Error::UNKNOWN_POS_REQ_ID);
       }
       break;
   }
@@ -1588,7 +1577,7 @@ void Controller::operator()(Trace<roq::fix::codec::RequestForPositions> const &e
 void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> const &event, uint64_t session_id) {
   auto &trade_capture_report_request = event.value;
   auto req_id = trade_capture_report_request.trade_request_id;
-  auto reject = [&](auto &text) {
+  auto reject = [&](auto error) {
     auto request_id = shared_.create_request_id();
     auto trade_capture_report_request_ack = roq::fix::codec::TradeCaptureReportRequestAck{
         .trade_request_id = req_id,                                             // required
@@ -1597,13 +1586,13 @@ void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> co
         .trade_request_status = roq::fix::TradeRequestStatus::REJECTED,         // required
         .symbol = trade_capture_report_request.symbol,                          // required
         .security_exchange = trade_capture_report_request.security_exchange,    // required
-        .text = text,
+        .text = magic_enum::enum_name(error),
     };
     Trace event_2{event.trace_info, trade_capture_report_request_ack};
     dispatch_to_client(event_2, session_id);
   };
   if (!trade_capture_report_request.is_valid()) {
-    reject(ERROR_VALIDATION);
+    reject(roq::fix::codec::Error::VALIDATION);
     return;
   }
   auto &mapping = subscriptions_.trade_request_id;
@@ -1634,18 +1623,18 @@ void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> co
     using enum roq::fix::SubscriptionRequestType;
     case UNDEFINED:
     case UNKNOWN:
-      reject(ERROR_UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
+      reject(roq::fix::codec::Error::UNKNOWN_SUBSCRIPTION_REQUEST_TYPE);
       break;
     case SNAPSHOT:
       if (exists) {
-        reject(ERROR_DUPLICATE_TRADE_REQUEST_ID);
+        reject(roq::fix::codec::Error::DUPLICATE_TRADE_REQUEST_ID);
       } else {
         dispatch(false);
       }
       break;
     case SNAPSHOT_UPDATES:
       if (exists) {
-        reject(ERROR_DUPLICATE_TRADE_REQUEST_ID);
+        reject(roq::fix::codec::Error::DUPLICATE_TRADE_REQUEST_ID);
       } else {
         dispatch(true);
       }
@@ -1654,7 +1643,7 @@ void Controller::operator()(Trace<roq::fix::codec::TradeCaptureReportRequest> co
       if (exists) {
         dispatch(false);
       } else {
-        reject(ERROR_UNKNOWN_TRADE_REQUEST_ID);
+        reject(roq::fix::codec::Error::UNKNOWN_TRADE_REQUEST_ID);
       }
       break;
   }
