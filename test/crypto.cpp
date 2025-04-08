@@ -2,12 +2,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "roq/proxy/fix/tools/crypto.hpp"
+#include "roq/fix_proxy/tools/crypto.hpp"
 
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-using namespace roq::proxy::fix;
+using namespace roq::fix_proxy;
 
 TEST_CASE("proxy_tools_crypto_simple", "[fix_proxy_tools_crypto]") {
   tools::Crypto crypto{""sv, 5s};

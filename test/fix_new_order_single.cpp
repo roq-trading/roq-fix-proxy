@@ -14,7 +14,7 @@ using namespace roq;
 
 namespace {
 using Header = fix::Header;
-using NewOrderSingle = roq::fix::codec::NewOrderSingle;
+using NewOrderSingle = fix::codec::NewOrderSingle;
 };  // namespace
 
 TEST_CASE("fix_new_order_single", "[fix_new_order_single]") {

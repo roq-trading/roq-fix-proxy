@@ -1,0 +1,42 @@
+{
+  "name": "roq/fix_proxy/flags/Flags",
+  "type": "flags",
+  "values": [
+    {
+      "name": "config_file",
+      "type": "std/string",
+      "validator": "roq/flags/validators/Path",
+      "required": true,
+      "description": "Config file"
+    },
+    {
+      "name": "name",
+      "type": "std/string",
+      "required": true,
+      "description": "Service name (CURRENTLY UNUSED)"
+    },
+    {
+      "name": "service_listen_address",
+      "type": "std/string",
+      "description": "Service listen address (CURRENTLY UNUSED)"
+    },
+    {
+      "name": "enable_order_mass_cancel",
+      "type": "std/bool",
+      "default": false,
+      "description": "Enable order mass cancel?"
+    },
+    {
+      "name": "disable_remove_cl_ord_id",
+      "type": "std/bool",
+      "default": false,
+      "description": "Disable removal of cl_ord_id when order reaches final state"
+    },
+    {
+      "name": "fix_debug",
+      "type": "std/bool",
+      "default": false,
+      "description": "Debug FIX messages?"
+    }
+  ]
+}
