@@ -35,6 +35,15 @@ auto const TIMER_FREQUENCY = 100ms;
 // === HELPERS ===
 
 namespace {
+template <typename R>
+auto create_username_to_password_and_strategy_id_and_component_id(auto &config) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
+  for (auto &[_, user] : config.users)
+    result.try_emplace(user.username, user.password, user.strategy_id, user.component);
+  return result;
+}
+
 auto create_proxy(auto &handler, auto &settings) {
   auto options = fix::proxy::Manager::Options{
       .server{
@@ -76,10 +85,13 @@ auto create_server_session(auto &handler, auto &settings, auto &context, auto &c
 // === IMPLEMENTATION ===
 
 Controller::Controller(Settings const &settings, Config const &config, io::Context &context, std::span<std::string_view const> const &connections)
-    : context_{context}, terminate_{context.create_signal(*this, io::sys::Signal::Type::TERMINATE)},
-      interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)}, timer_{context.create_timer(*this, TIMER_FREQUENCY)},
-      proxy_{create_proxy(*this, settings)}, shared_{settings, config, *proxy_}, auth_session_{create_auth_session(*this, settings, context)},
-      server_session_{create_server_session(*this, settings, context, connections, *proxy_)}, client_manager_{settings, context, shared_} {
+    : username_to_password_and_strategy_id_and_component_id_{create_username_to_password_and_strategy_id_and_component_id<
+          decltype(username_to_password_and_strategy_id_and_component_id_)>(config)},
+      crypto_{settings.client.auth_method, settings.client.auth_timestamp_tolerance}, context_{context},
+      terminate_{context.create_signal(*this, io::sys::Signal::Type::TERMINATE)}, interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)},
+      timer_{context.create_timer(*this, TIMER_FREQUENCY)}, proxy_{create_proxy(*this, settings)}, shared_{settings, *proxy_},
+      auth_session_{create_auth_session(*this, settings, context)}, server_session_{create_server_session(*this, settings, context, connections, *proxy_)},
+      client_manager_{settings, context, shared_} {
 }
 
 void Controller::run() {
@@ -121,11 +133,21 @@ void Controller::operator()(io::sys::Timer::Event const &event) {
 // authentication:
 
 std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::proxy::Manager::Credentials const &credentials, uint64_t session_id) {
-  std::pair<fix::codec::Error, uint32_t> result;
-  auto success = [&](auto strategy_id) { result = {{}, strategy_id}; };
-  auto failure = [&](auto error) { result = {error, {}}; };
-  shared_.session_logon(session_id, credentials.component, credentials.username, credentials.password, credentials.raw_data, success, failure);
-  return result;
+  auto iter_1 = username_to_password_and_strategy_id_and_component_id_.find(credentials.username);
+  if (iter_1 == std::end(username_to_password_and_strategy_id_and_component_id_)) {
+    log::warn("Invalid: username"sv);
+    return {fix::codec::Error::INVALID_USERNAME, {}};
+  }
+  auto &[secret, strategy_id, component] = (*iter_1).second;
+  if (credentials.component != component) {
+    log::warn("Invalid: component"sv);
+    return {fix::codec::Error::INVALID_COMPONENT, {}};
+  }
+  if (!crypto_.validate(credentials.password, secret, credentials.raw_data)) {
+    log::warn("Invalid: password"sv);
+    return {fix::codec::Error::INVALID_PASSWORD, {}};
+  }
+  return {{}, strategy_id};
 }
 
 // server:

@@ -19,6 +19,8 @@
 #include "roq/fix_proxy/settings.hpp"
 #include "roq/fix_proxy/shared.hpp"
 
+#include "roq/fix_proxy/tools/crypto.hpp"
+
 #include "roq/fix_proxy/auth/session.hpp"
 
 #include "roq/fix_proxy/server/session.hpp"
@@ -132,6 +134,8 @@ struct Controller final : public io::sys::Signal::Handler,
   bool dispatch_to_client(Trace<T> const &, uint64_t session_id);
 
  private:
+  utils::unordered_map<std::string, std::tuple<std::string, uint32_t, std::string>> const username_to_password_and_strategy_id_and_component_id_;
+  tools::Crypto crypto_;
   io::Context &context_;
   std::unique_ptr<io::sys::Signal> const terminate_;
   std::unique_ptr<io::sys::Signal> const interrupt_;
