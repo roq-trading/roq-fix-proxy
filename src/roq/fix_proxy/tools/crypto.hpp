@@ -30,6 +30,10 @@ struct Crypto final {
     HMAC_SHA256_TS,
   };
 
+ protected:
+  template <Method>
+  bool validate_helper(std::string_view const &password, std::string_view const &secret, std::string_view const &raw_data);
+
  private:
   Method const method_;
   std::chrono::nanoseconds const timestamp_tolerance_;

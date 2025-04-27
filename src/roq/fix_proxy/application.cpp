@@ -2,12 +2,9 @@
 
 #include "roq/fix_proxy/application.hpp"
 
-#include <exception>
-#include <vector>
-
-#include "roq/exceptions.hpp"
-
 #include "roq/logging.hpp"
+
+#include "roq/utils/exceptions/unhandled.hpp"
 
 #include "roq/io/engine/context_factory.hpp"
 
@@ -33,18 +30,7 @@ int Application::main(args::Parser const &args) {
     Controller{settings, config, *context, params}.run();
     return EXIT_SUCCESS;
   } catch (...) {
-    try {
-      throw;
-    } catch (SystemError &e) {
-      log::error("Unhandled exception: {}"sv, e);
-    } catch (Exception &e) {
-      log::error("Unhandled exception: {}"sv, e);
-    } catch (std::exception &e) {
-      log::error(R"(Unhandled exception: type="{}", what="{}")"sv, typeid(e).name(), e.what());
-    } catch (...) {
-      auto e = std::current_exception();
-      log::error(R"(Unhandled exception: type="{}")"sv, typeid(e).name());
-    }
+    utils::exceptions::Unhandled::terminate();
   }
   return EXIT_FAILURE;
 }
