@@ -151,8 +151,9 @@ void Session::operator()(io::net::tcp::Connection::Read const &) {
     };
     while (!std::empty(buffer)) {
       auto bytes = fix::Reader<FIX_VERSION>::dispatch(buffer, helper, logger);
-      if (bytes == 0)
+      if (bytes == 0) {
         break;
+      }
       if (shared_.settings.test.fix_debug) {
         auto message = buffer.subspan(0, bytes);
         log::info<0>("[session_id={}]: {}"sv, session_id_, utils::debug::fix::Message{message});
@@ -216,8 +217,9 @@ void Session::send(Trace<T> const &event, std::chrono::nanoseconds sending_time)
 
 void Session::parse(Trace<fix::Message> const &event) {
   auto &[trace_info, message] = event;
-  if (std::empty(comp_id_)) [[unlikely]]
+  if (std::empty(comp_id_)) [[unlikely]] {
     comp_id_ = message.header.sender_comp_id;
+  }
   switch (message.header.msg_type) {
     using enum fix::MsgType;
     case REJECT:

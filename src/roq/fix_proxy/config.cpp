@@ -16,16 +16,18 @@ namespace fix_proxy {
 
 namespace {
 void check_empty(auto &node) {
-  if (!node.is_table())
+  if (!node.is_table()) {
     return;
+  }
   auto &table = *node.as_table();
   auto error = false;
   for (auto &[key, value] : table) {
     log::warn(R"(key="{}")"sv, static_cast<std::string_view>(key));
     error = true;
   }
-  if (error)
+  if (error) {
     log::fatal("Unexpected"sv);
+  }
 }
 
 template <typename Callback>
@@ -36,8 +38,9 @@ bool find_and_remove(auto &node, std::string_view const &key, Callback callback)
   }
   auto &table = *node.as_table();
   auto iter = table.find(key);
-  if (iter == table.end())
+  if (iter == table.end()) {
     return false;
+  }
   callback((*iter).second);
   table.erase(iter);
   assert(table.find(key) == std::end(table));

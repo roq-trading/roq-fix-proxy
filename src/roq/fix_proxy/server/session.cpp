@@ -192,8 +192,9 @@ void Session::operator()(io::net::ConnectionManager::Disconnected const &) {
 
 void Session::operator()(io::net::ConnectionManager::Read const &) {
   auto logger = [this](auto &message) {
-    if (debug_) [[unlikely]]
+    if (debug_) [[unlikely]] {
       log::info("{}"sv, utils::debug::fix::Message{message});
+    }
   };
   auto buffer = (*connection_manager_).buffer();
   size_t total_bytes = 0;
@@ -214,8 +215,9 @@ void Session::operator()(io::net::ConnectionManager::Read const &) {
       }
     };
     auto bytes = fix::Reader<FIX_VERSION>::dispatch(buffer, parser, logger);
-    if (bytes == 0)
+    if (bytes == 0) {
       break;
+    }
     assert(bytes <= std::size(buffer));
     total_bytes += bytes;
     buffer = buffer.subspan(bytes);
@@ -243,8 +245,9 @@ void Session::send(Trace<T> const &event) {
   };
   auto helper = [&](auto &buffer) {
     auto message = value.encode(header, buffer);
-    if (debug_) [[unlikely]]
+    if (debug_) [[unlikely]] {
       log::info("{}"sv, utils::debug::fix::Message{message});
+    }
     return std::size(message);
   };
   if ((*connection_manager_).send(helper)) {

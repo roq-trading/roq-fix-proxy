@@ -30,21 +30,24 @@ struct Manager final : public Listener::Handler {
   void operator()(Event<Timer> const &);
 
   void dispatch(auto &value) {
-    for (auto &[_, item] : sessions_)
+    for (auto &[_, item] : sessions_) {
       (*item)(value);
+    }
   }
 
   template <typename Callback>
   void get_all_sessions(Callback callback) {
-    for (auto &[_, session] : sessions_)
+    for (auto &[_, session] : sessions_) {
       callback(*session);
+    }
   }
 
   template <typename Callback>
   bool find(uint64_t session_id, Callback callback) {
     auto iter = sessions_.find(session_id);
-    if (iter == std::end(sessions_))
+    if (iter == std::end(sessions_)) {
       return false;
+    }
     callback(*(*iter).second);
     return true;
   }

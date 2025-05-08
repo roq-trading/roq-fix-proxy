@@ -39,8 +39,9 @@ template <typename R>
 auto create_username_to_password_and_strategy_id_and_component_id(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  for (auto &[_, user] : config.users)
+  for (auto &[_, user] : config.users) {
     result.try_emplace(user.username, user.password, user.strategy_id, user.component);
+  }
   return result;
 }
 
@@ -67,15 +68,17 @@ auto create_proxy(auto &handler, auto &settings) {
 }
 
 auto create_auth_session(auto &handler, auto &settings, auto &context) -> std::unique_ptr<auth::Session> {
-  if (std::empty(settings.auth.uri))
+  if (std::empty(settings.auth.uri)) {
     return {};
+  }
   io::web::URI uri{settings.auth.uri};
   return std::make_unique<auth::Session>(handler, settings, context, uri);
 }
 
 auto create_server_session(auto &handler, auto &settings, auto &context, auto &connections, auto &proxy) {
-  if (std::size(connections) != 1)
+  if (std::size(connections) != 1) {
     log::fatal("Unexpected: only supporting a single upstream fix-bridge"sv);
+  }
   auto &connection = connections[0];
   auto uri = io::web::URI{connection};
   return server::Session{handler, settings, context, uri, proxy};
@@ -379,8 +382,9 @@ template <typename... Args>
 void Controller::dispatch(Args &&...args) {
   MessageInfo message_info;
   Event event{message_info, std::forward<Args>(args)...};
-  if (static_cast<bool>(auth_session_))
+  if (static_cast<bool>(auth_session_)) {
     (*auth_session_)(event);
+  }
   server_session_(event);
   client_manager_(event);
 }
@@ -397,8 +401,9 @@ bool Controller::dispatch_to_client(Trace<T> const &event, uint64_t session_id) 
     session(event);
     success = true;
   });
-  if (!success)
+  if (!success) {
     log::warn<0>("Undeliverable: session_id={}"sv, session_id);
+  }
   return success;
 }
 

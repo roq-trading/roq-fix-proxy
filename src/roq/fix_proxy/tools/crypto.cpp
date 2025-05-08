@@ -27,8 +27,9 @@ namespace tools {
 
 namespace {
 auto parse_method(auto &auth_method) {
-  if (std::empty(auth_method))
+  if (std::empty(auth_method)) {
     return Crypto::Method{};
+  }
   return utils::parse_enum<Crypto::Method>(auth_method);
 };
 }  // namespace

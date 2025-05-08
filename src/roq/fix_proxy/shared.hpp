@@ -27,8 +27,9 @@ struct Shared final {
 
   template <typename Callback>
   void session_cleanup(Callback callback) {
-    for (auto session_id : sessions_to_remove_)
+    for (auto session_id : sessions_to_remove_) {
       callback(session_id);
+    }
     sessions_to_remove_.clear();
   }
 

@@ -37,8 +37,9 @@ void Manager::operator()(Factory &factory) {
 // utilities
 
 void Manager::remove_zombies(std::chrono::nanoseconds now) {
-  if (now < next_garbage_collection_)
+  if (now < next_garbage_collection_) {
     return;
+  }
   next_garbage_collection_ = now + GARBAGE_COLLECTION_FREQUENCY;
   shared_.session_cleanup([&](auto session_id) { sessions_.erase(session_id); });
 }
