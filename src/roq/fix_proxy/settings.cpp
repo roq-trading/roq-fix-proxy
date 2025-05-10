@@ -4,7 +4,7 @@
 
 #include "roq/fix_proxy/flags/flags.hpp"
 
-using namespace std::chrono_literals;  // NOLINT
+using namespace std::chrono_literals;
 
 namespace roq {
 namespace fix_proxy {
