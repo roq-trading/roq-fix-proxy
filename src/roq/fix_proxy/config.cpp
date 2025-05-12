@@ -49,7 +49,7 @@ bool find_and_remove(auto &node, std::string_view const &key, Callback callback)
 
 template <typename R>
 R parse_symbols(auto &node) {
-  using result_type = std::remove_cvref<R>::type;
+  using result_type = std::remove_cvref_t<R>;
   result_type result;
   auto parse_helper = [&](auto &node) {
     using value_type = typename R::value_type;
@@ -94,7 +94,7 @@ auto parse_user(auto &node) {
 
 template <typename R>
 R parse_users(auto &node) {
-  using result_type = std::remove_cvref<R>::type;
+  using result_type = std::remove_cvref_t<R>;
   result_type result;
   auto parse_helper = [&](auto &node) {
     if (node.is_table()) {

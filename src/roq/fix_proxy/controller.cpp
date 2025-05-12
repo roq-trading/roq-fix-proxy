@@ -37,7 +37,7 @@ auto const TIMER_FREQUENCY = 100ms;
 namespace {
 template <typename R>
 auto create_username_to_password_and_strategy_id_and_component_id(auto &config) {
-  using result_type = std::remove_cvref<R>::type;
+  using result_type = std::remove_cvref_t<R>;
   result_type result;
   for (auto &[_, user] : config.users) {
     result.try_emplace(user.username, user.password, user.strategy_id, user.component);
