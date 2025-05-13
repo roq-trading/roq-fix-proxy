@@ -81,7 +81,7 @@ struct Session final : public io::net::ConnectionManager::Handler {
   // - outbound
 
   template <typename T>
-  void send(Trace<T> const &value);
+  void send(Trace<T> const &);
 
   // - inbound
 

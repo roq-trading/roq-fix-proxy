@@ -64,7 +64,7 @@ template <>
 bool Crypto::validate_helper<Crypto::Method::HMAC_SHA256_TS>(
     std::string_view const &password, std::string_view const &secret, std::string_view const &raw_data) {
   auto pos = raw_data.find_first_of('.');
-  if (pos == raw_data.npos) {
+  if (pos == std::string_view::npos) {
     log::warn(R"(DEBUG no period in raw_data="{}")"sv, raw_data);
     return false;
   }
