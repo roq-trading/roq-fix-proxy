@@ -76,15 +76,15 @@ auto parse_user(auto &node) {
   User result;
   for (auto [key, value] : table) {
     if (key == "component"sv) {
-      result.component = *value.template value<std::string>();
+      result.component = value.template value<std::string>().value();
     } else if (key == "username"sv) {
-      result.username = *value.template value<std::string>();
+      result.username = value.template value<std::string>().value();
     } else if (key == "password"sv) {
-      result.password = *value.template value<std::string>();
+      result.password = value.template value<std::string>().value();
     } else if (key == "accounts"sv) {
       // XXX TODO
     } else if (key == "strategy_id"sv) {
-      result.strategy_id = *value.template value<uint32_t>();
+      result.strategy_id = value.template value<uint32_t>().value();
     } else {
       log::fatal(R"(Unexpected: user key="{}")"sv, key.str());
     }
