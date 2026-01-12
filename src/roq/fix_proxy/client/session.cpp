@@ -37,7 +37,7 @@ void Session::force_disconnect() {
 
 // - connection
 
-void Session::operator()(Trace<fix::proxy::Manager::Disconnect> const &event) {
+void Session::operator()(Trace<fix::proxy::Manager::Disconnect> const &) {
   close();
 }
 

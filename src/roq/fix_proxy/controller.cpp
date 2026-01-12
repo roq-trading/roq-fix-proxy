@@ -135,7 +135,7 @@ void Controller::operator()(io::sys::Timer::Event const &event) {
 
 // authentication:
 
-std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::proxy::Manager::Credentials const &credentials, uint64_t session_id) {
+std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::proxy::Manager::Credentials const &credentials, [[maybe_unused]] uint64_t session_id) {
   auto iter_1 = username_to_password_and_strategy_id_and_component_id_.find(credentials.username);
   if (iter_1 == std::end(username_to_password_and_strategy_id_and_component_id_)) {
     log::warn("Invalid: username"sv);
@@ -157,10 +157,10 @@ std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::proxy::Manage
 
 // - connection
 
-void Controller::operator()(Trace<fix::proxy::Manager::Disconnected> const &event) {
+void Controller::operator()(Trace<fix::proxy::Manager::Disconnected> const &) {
 }
 
-void Controller::operator()(Trace<fix::proxy::Manager::Ready> const &event) {
+void Controller::operator()(Trace<fix::proxy::Manager::Ready> const &) {
 }
 
 // - manager => server
@@ -357,11 +357,11 @@ void Controller::operator()(Trace<fix::codec::QuoteStatusReport> const &event, u
 
 // auth::Session::Handler
 
-void Controller::operator()(auth::Session::Insert const &insert) {
+void Controller::operator()(auth::Session::Insert const &) {
   // shared_.add_user(insert.username, insert.password, insert.strategy_id, insert.component);
 }
 
-void Controller::operator()(auth::Session::Remove const &remove) {
+void Controller::operator()(auth::Session::Remove const &) {
   // shared_.remove_user(remove.username);
 }
 
