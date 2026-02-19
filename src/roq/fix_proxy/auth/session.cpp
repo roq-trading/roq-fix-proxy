@@ -31,7 +31,6 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &uri) 
       // proxy
       .proxy = {},
       // http
-      .query = {},
       .user_agent = ROQ_PACKAGE_NAME,
       .request_timeout = {},
       .ping_frequency = settings.auth.ping_freq,
