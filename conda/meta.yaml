@@ -31,7 +31,7 @@ requirements:
     - roq-flags
     - roq-io
     - roq-logging
-    - roq-oss-benchmark
+    - benchmark
     - roq-oss-nameof
     - roq-oss-tomlplusplus
     - roq-oss-unordered_dense
