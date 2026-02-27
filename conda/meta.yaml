@@ -19,6 +19,7 @@ requirements:
     - make
     - roq-autogen
   host:
+    - benchmark
     - catch2
     - fmt
     - libabseil
@@ -31,12 +32,13 @@ requirements:
     - roq-flags
     - roq-io
     - roq-logging
-    - benchmark
     - roq-oss-nameof
     - roq-oss-tomlplusplus
     - roq-oss-unordered_dense
     - roq-utils
     - roq-web
+  run:
+    - benchmark
 
 about:
   home: https://roq-trading.com
