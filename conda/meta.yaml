@@ -33,9 +33,9 @@ requirements:
     - roq-io
     - roq-logging
     - roq-oss-nameof
-    - roq-oss-tomlplusplus
     - roq-utils
     - roq-web
+    - tomlplusplus
     - unordered_dense
   run:
     - benchmark
